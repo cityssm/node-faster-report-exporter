@@ -1,11 +1,13 @@
 # FASTER Web Report Exporter
 
+[![DeepSource](https://app.deepsource.com/gh/cityssm/node-faster-report-exporter.svg/?label=active+issues&show_trend=true&token=bslC1GSndvK7fVXDTJ9K4Lgi)](https://app.deepsource.com/gh/cityssm/node-faster-report-exporter/)
+[![Maintainability](https://api.codeclimate.com/v1/badges/43c2a67bb2cb61d6220e/maintainability)](https://codeclimate.com/github/cityssm/node-faster-report-exporter/maintainability)
+
 **On demand exports of selected reports from the
 [FASTER Web Fleet Management System](https://fasterasset.com/products/fleet-management-software/)**.
 
 This module uses a headless Puppeteer browser to log into FASTER Web,
-navigate to to the appropriate report,
-and select the preferred export format.
+navigate to the appropriate report, and select the preferred export format.
 Once downloaded, the module returns the path to the downloaded file.
 
 ## Installation
