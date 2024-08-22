@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { URL } from 'node:url';
-import { puppeteer } from '@cityssm/puppeteer-launch';
-import { delay } from './utilities.js';
+import puppeteerLaunch from '@cityssm/puppeteer-launch';
+import { delay, getElementOnPageBySelector } from './utilities.js';
 const exportTypes = {
     PDF: 'pdf',
     CSV: 'csv',
@@ -16,6 +16,7 @@ export class FasterReportExporter {
     #fasterPassword;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
+    #timeoutMillis = 60_000;
     constructor(fasterTenant, fasterUserName, fasterPassword) {
         this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`;
         this.#fasterUserName = fasterUserName;
@@ -24,15 +25,25 @@ export class FasterReportExporter {
     setDownloadFolderPath(downloadFolderPath) {
         this.#downloadFolderPath = downloadFolderPath;
     }
+    setTimeoutMillis(timeoutMillis) {
+        this.#timeoutMillis = timeoutMillis;
+    }
     showBrowserWindow() {
         this.#useHeadlessBrowser = false;
     }
     async #getLoggedInFasterPage() {
         let browser;
         try {
-            browser = await puppeteer.launch({ headless: this.#useHeadlessBrowser });
+            browser = await puppeteerLaunch({
+                browser: 'chrome',
+                protocol: 'cdp',
+                headless: this.#useHeadlessBrowser,
+                timeout: this.#timeoutMillis
+            });
             const page = await browser.newPage();
-            await page.goto(this.#fasterBaseUrl);
+            await page.goto(this.#fasterBaseUrl, {
+                timeout: this.#timeoutMillis
+            });
             await page.waitForNetworkIdle();
             const loginFormElement = await page.$('#form_Signin');
             if (loginFormElement !== null) {
@@ -51,6 +62,7 @@ export class FasterReportExporter {
                     throw new Error('Unable to locate Sign In button.');
                 }
                 await submitButtonElement.click();
+                await delay(500);
                 await page.waitForNetworkIdle();
             }
             return {
@@ -73,7 +85,10 @@ export class FasterReportExporter {
             for (const [parameterKey, parameterValue] of Object.entries(reportParameters)) {
                 reportUrl.searchParams.set(parameterKey, parameterValue);
             }
-            await page.goto(reportUrl.href);
+            await page.goto(reportUrl.href, {
+                timeout: this.#timeoutMillis
+            });
+            await delay(200);
             await page.waitForNetworkIdle();
             return {
                 browser,
@@ -114,7 +129,8 @@ export class FasterReportExporter {
                         throw new Error('Download cancelled.');
                     }
                 });
-                const printOptionsMenuElement = await page.$('#RvDetails_ctl05_ctl04_ctl00_ButtonLink');
+                await page.waitForNetworkIdle();
+                const printOptionsMenuElement = await getElementOnPageBySelector(page, '#RvDetails_ctl05_ctl04_ctl00_ButtonLink', 20);
                 if (printOptionsMenuElement === null) {
                     throw new Error('Unable to locate print options.');
                 }
@@ -148,14 +164,16 @@ export class FasterReportExporter {
     async #exportWorkOrderPrint(workOrderNumber, exportType, printButtonSelector) {
         const { browser, page } = await this.#getLoggedInFasterPage();
         try {
-            await page.goto(`${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`);
+            await page.goto(`${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`, {
+                timeout: this.#timeoutMillis
+            });
             await delay(500);
             await page.waitForNetworkIdle();
-            const technicianPrintElement = await page.$(printButtonSelector);
-            if (technicianPrintElement === null) {
+            const printElement = await getElementOnPageBySelector(page, printButtonSelector);
+            if (printElement === null) {
                 throw new Error('Unable to locate print link.');
             }
-            await technicianPrintElement.click();
+            await printElement.click();
             await delay(500);
             await page.waitForNetworkIdle();
             const pages = await browser.pages();
@@ -165,7 +183,7 @@ export class FasterReportExporter {
             }
             await delay(500);
             await newPage.bringToFront();
-            await delay(500);
+            await delay(1000);
             await newPage.waitForNetworkIdle();
             return await this.#exportFasterReport(browser, newPage, exportType);
         }
