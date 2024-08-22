@@ -2,7 +2,7 @@
   "name": "@cityssm/faster-report-exporter",
   "version": "0.1.0",
   "type": "module",
-  "description": "On demand exports of selected reports from FASTER Web.",
+  "description": "On demand exports of selected reports from the FASTER Web Fleet Management System.",
   "exports": "./index.js",
   "scripts": {
     "test": "node --test",
@@ -26,11 +26,11 @@
   },
   "homepage": "https://github.com/cityssm/node-faster-web-exporter#readme",
   "devDependencies": {
-    "@types/node": "^22.3.0",
+    "@types/node": "^22.5.0",
     "eslint-config-cityssm": "^6.0.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
-    "@cityssm/puppeteer-launch": "^3.0.0"
+    "@cityssm/puppeteer-launch": "^3.1.0"
   }
 }
