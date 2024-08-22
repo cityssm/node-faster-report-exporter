@@ -1,5 +1,6 @@
 # FASTER Web Report Exporter
 
+[![npm (scoped)](https://img.shields.io/npm/v/%40cityssm/faster-report-exporter)](https://www.npmjs.com/package/@cityssm/faster-report-exporter)
 [![DeepSource](https://app.deepsource.com/gh/cityssm/node-faster-report-exporter.svg/?label=active+issues&show_trend=true&token=bslC1GSndvK7fVXDTJ9K4Lgi)](https://app.deepsource.com/gh/cityssm/node-faster-report-exporter/)
 [![Maintainability](https://api.codeclimate.com/v1/badges/43c2a67bb2cb61d6220e/maintainability)](https://codeclimate.com/github/cityssm/node-faster-report-exporter/maintainability)
 
