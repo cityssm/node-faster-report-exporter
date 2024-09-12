@@ -5,7 +5,7 @@
   "description": "On demand exports of selected reports from the FASTER Web Fleet Management System.",
   "exports": "./index.js",
   "scripts": {
-    "test": "node --test",
+    "test": "cross-env NODE_ENV=dev DEBUG=faster-report-exporter:* node --test",
     "coverage": "c8 --reporter=lcov --reporter=text --reporter=text-summary node --test"
   },
   "repository": {
@@ -26,11 +26,13 @@
   },
   "homepage": "https://github.com/cityssm/node-faster-web-exporter#readme",
   "devDependencies": {
-    "@types/node": "^22.5.0",
-    "eslint-config-cityssm": "^6.0.0",
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.5.4",
+    "eslint-config-cityssm": "^8.0.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
-    "@cityssm/puppeteer-launch": "^3.1.0"
+    "@cityssm/puppeteer-launch": "^3.1.0",
+    "debug": "^4.3.7"
   }
 }

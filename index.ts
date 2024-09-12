@@ -4,8 +4,11 @@ import path from 'node:path'
 import { URL } from 'node:url'
 
 import puppeteerLaunch, { type puppeteer } from '@cityssm/puppeteer-launch'
+import Debug from 'debug'
 
 import { delay, getElementOnPageBySelector } from './utilities.js'
+
+const debug = Debug('faster-report-exporter:index')
 
 interface ReportParameters extends Record<string, string> {
   ReportType: 'S'
@@ -20,6 +23,8 @@ const exportTypes = {
 }
 
 type ReportExportType = keyof typeof exportTypes
+
+const shortDelayMillis = 500
 
 export class FasterReportExporter {
   readonly #fasterBaseUrl: `https://${string}.fasterwebcloud.com/FASTER`
@@ -45,10 +50,22 @@ export class FasterReportExporter {
     this.#downloadFolderPath = downloadFolderPath
   }
 
+  /**
+   * Changes the timeout for loading the browser and navigating between pages.
+   * @param timeoutMillis - Number of milliseconds.
+   */
   setTimeoutMillis(timeoutMillis: number): void {
     this.#timeoutMillis = timeoutMillis
+
+    if (timeoutMillis < 30_000) {
+      debug('Warning: Timeouts less than 30s are not recommended.')
+    }
   }
 
+  /**
+   * Switches off headless mode, making the browser window visible.
+   * Useful for debugging.
+   */
   showBrowserWindow(): void {
     this.#useHeadlessBrowser = false
   }
@@ -72,13 +89,17 @@ export class FasterReportExporter {
        * Load Faster
        */
 
+      debug('Logging into FASTER...')
+
       const page = await browser.newPage()
 
       await page.goto(this.#fasterBaseUrl, {
         timeout: this.#timeoutMillis
       })
 
-      await page.waitForNetworkIdle()
+      await page.waitForNetworkIdle({
+        timeout: this.#timeoutMillis
+      })
 
       /*
        * Log in if need be
@@ -87,6 +108,8 @@ export class FasterReportExporter {
       const loginFormElement = await page.$('#form_Signin')
 
       if (loginFormElement !== null) {
+        debug('Filling out login form...')
+
         const userNameElement = await loginFormElement.$(
           '#LoginControl_UserName'
         )
@@ -117,9 +140,30 @@ export class FasterReportExporter {
 
         await submitButtonElement.click()
 
-        await delay(500)
-        await page.waitForNetworkIdle()
+        await delay(shortDelayMillis)
+
+        await page.waitForNetworkIdle({
+          timeout: this.#timeoutMillis
+        })
+
+        if (page.url().toLowerCase().includes('release/releasenotes.aspx')) {
+          debug('Release notes page, continuing...')
+
+          const continueButtonElement = await page.$('#OKRadButon_input')
+
+          if (continueButtonElement !== null) {
+            await continueButtonElement.click()
+
+            await delay(shortDelayMillis)
+
+            await page.waitForNetworkIdle({
+              timeout: this.#timeoutMillis
+            })
+          }
+        }
       }
+
+      debug('Finished logging in.')
 
       return {
         browser,
@@ -162,8 +206,11 @@ export class FasterReportExporter {
         timeout: this.#timeoutMillis
       })
 
-      await delay(200)
-      await page.waitForNetworkIdle()
+      await delay(shortDelayMillis)
+
+      await page.waitForNetworkIdle({
+        timeout: this.#timeoutMillis
+      })
 
       return {
         browser,
@@ -191,7 +238,11 @@ export class FasterReportExporter {
     page: puppeteer.Page,
     exportType: ReportExportType = 'PDF'
   ): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+    await page.bringToFront()
+
+    debug(`Report Page Title: ${await page.title()}`)
+
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor, sonarjs/no-misused-promises
     return await new Promise(async (resolve) => {
       try {
         /*
@@ -208,6 +259,8 @@ export class FasterReportExporter {
 
         cdpSession.on('Browser.downloadProgress', (event) => {
           if (event.state === 'completed') {
+            debug('Download complete.')
+
             const downloadedFilePath = path.join(
               this.#downloadFolderPath,
               event.guid
@@ -219,8 +272,10 @@ export class FasterReportExporter {
             // eslint-disable-next-line security/detect-non-literal-fs-filename
             fs.rename(downloadedFilePath, newFilePath, (error) => {
               if (error === null) {
+                debug(`File: ${newFilePath}`)
                 resolve(newFilePath)
               } else {
+                debug(`File: ${downloadedFilePath}`)
                 resolve(downloadedFilePath)
               }
             })
@@ -233,7 +288,11 @@ export class FasterReportExporter {
          * Print to PDF
          */
 
-        await page.waitForNetworkIdle()
+        await page.waitForNetworkIdle({
+          timeout: this.#timeoutMillis
+        })
+
+        debug(`Finding the print button for "${exportType}"...`)
 
         const printOptionsMenuElement = await getElementOnPageBySelector(
           page,
@@ -247,19 +306,31 @@ export class FasterReportExporter {
 
         await printOptionsMenuElement.click()
 
-        await page.waitForNetworkIdle()
+        await delay(shortDelayMillis * 2)
+
+        await page.waitForNetworkIdle({
+          timeout: this.#timeoutMillis
+        })
 
         const printOptionElement = await page.$(
           `#RvDetails_ctl05_ctl04_ctl00_Menu a[title^='${exportType}']`
         )
 
         if (printOptionElement === null) {
-          throw new Error(`Unable to locate ${exportType} print type.`)
+          throw new Error(`Unable to locate "${exportType}" print type.`)
         }
+
+        debug(`Print button found for "${exportType}"...`)
 
         await printOptionElement.click()
 
-        await page.waitForNetworkIdle()
+        debug('Print selected.')
+
+        await delay(shortDelayMillis * 2)
+
+        await page.waitForNetworkIdle({
+          timeout: this.#timeoutMillis
+        })
       } finally {
         try {
           await browser?.close()
@@ -304,7 +375,8 @@ export class FasterReportExporter {
         }
       )
 
-      await delay(500)
+      await delay(shortDelayMillis)
+
       await page.waitForNetworkIdle()
 
       const printElement = await getElementOnPageBySelector(
@@ -316,12 +388,27 @@ export class FasterReportExporter {
         throw new Error('Unable to locate print link.')
       }
 
+      let pages = await browser.pages()
+
+      const beforePageCount = pages.length
+      let afterPageCount = beforePageCount
+
       await printElement.click()
 
-      await delay(500)
-      await page.waitForNetworkIdle()
+      let retries = 5
 
-      const pages = await browser.pages()
+      while (beforePageCount === afterPageCount && retries > 0) {
+        await delay(shortDelayMillis)
+
+        await page.waitForNetworkIdle({
+          timeout: this.#timeoutMillis
+        })
+
+        pages = await browser.pages()
+        afterPageCount = pages.length
+
+        retries -= 1
+      }
 
       const newPage = pages.at(-1)
 
@@ -329,11 +416,15 @@ export class FasterReportExporter {
         throw new Error('Unable to locate new page.')
       }
 
-      await delay(500)
+      await delay(shortDelayMillis)
+
       await newPage.bringToFront()
 
-      await delay(1000)
-      await newPage.waitForNetworkIdle()
+      await delay(shortDelayMillis)
+
+      await newPage.waitForNetworkIdle({
+        timeout: this.#timeoutMillis
+      })
 
       return await this.#exportFasterReport(browser, newPage, exportType)
     } catch (error) {

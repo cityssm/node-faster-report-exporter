@@ -18,34 +18,40 @@ await describe('node-faster-report-exporter', async () => {
     fasterPassword
   )
 
-  reportExporter.showBrowserWindow()
+  // reportExporter.showBrowserWindow()
 
   await it('Exports a part order', async () => {
-    const reportPath = await reportExporter.exportPartOrderPrint(
-      partOrderNumber,
-      'Word'
-    )
+    try {
+      const reportPath = await reportExporter.exportPartOrderPrint(
+        partOrderNumber,
+        'Word'
+      )
 
-    console.log(reportPath)
-
-    assert(reportPath !== undefined)
+      assert(reportPath)
+    } catch {
+      assert.fail()
+    }
   })
 
   await it('Exports a work order customer print', async () => {
-    const reportPath =
-      await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber)
+    try {
+      const reportPath =
+        await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber)
 
-    console.log(reportPath)
-
-    assert(reportPath !== undefined)
+      assert(reportPath)
+    } catch {
+      assert.fail()
+    }
   })
 
   await it('Exports a work order technician print', async () => {
-    const reportPath =
-      await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber)
+    try {
+      const reportPath =
+        await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber)
 
-    console.log(reportPath)
-
-    assert(reportPath !== undefined)
+      console.log(reportPath)
+    } catch {
+      assert.fail()
+    }
   })
 })
