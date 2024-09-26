@@ -19,7 +19,7 @@ export class FasterReportExporter {
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
     #timeoutMillis = 90_000;
-    #timeZone = 3;
+    #timeZone = 'Eastern';
     constructor(fasterTenant, fasterUserName, fasterPassword, options = {}) {
         this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`;
         this.#fasterUserName = fasterUserName;
@@ -278,20 +278,21 @@ export class FasterReportExporter {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Part Order Print/W299 - OrderPrint', {
             OrderID: orderNumber.toString(),
-            TimeZoneID: this.#timeZone.toString(),
             ReportType: 'S',
             Domain: 'Inventory'
+        }, {
+            'Time Zone': this.#timeZone
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
     async exportAssetMasterList(exportType = 'PDF') {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
-            TimeZone: this.#timeZone.toString(),
             ReportType: 'S',
             Domain: 'Assets',
             Parent: 'Reports'
         }, {
+            'Time Zone': this.#timeZone,
             'Primary Grouping': 'Organization',
             'Secondary Grouping': 'Department'
         });

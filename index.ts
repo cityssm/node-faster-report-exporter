@@ -22,13 +22,15 @@ const exportTypes = {
   Word: 'docx'
 }
 
+type TimeZone = 'Atlantic' | 'Central' | 'Eastern' | 'Mountain' | 'Pacific'
+
 type ReportExportType = keyof typeof exportTypes
 
 interface FasterReportExporterOptions {
   downloadFolderPath: string
   timeoutMillis: number
   showBrowserWindow: boolean
-  timeZone: number
+  timeZone: TimeZone
 }
 
 export class FasterReportExporter {
@@ -40,7 +42,7 @@ export class FasterReportExporter {
 
   #useHeadlessBrowser = true
   #timeoutMillis = 90_000
-  #timeZone = 3
+  #timeZone: TimeZone = 'Eastern'
 
   /**
    * Initializes the FasterReportExporter.
@@ -111,7 +113,11 @@ export class FasterReportExporter {
     this.#useHeadlessBrowser = false
   }
 
-  setTimeZone(timezone: number): void {
+  /**
+   * Changes the time zone parameter used in many reports.
+   * @param timezone - The preferred report time zone.
+   */
+  setTimeZone(timezone: TimeZone): void {
     this.#timeZone = timezone
   }
 
@@ -263,7 +269,7 @@ export class FasterReportExporter {
 
       if (reportFilters !== undefined) {
         await page.waitForSelector('label')
-        
+
         const labelElements = await page.$$('label')
 
         const labelTextToInputId: Record<string, string> = {}
@@ -496,9 +502,11 @@ export class FasterReportExporter {
       '/Part Order Print/W299 - OrderPrint',
       {
         OrderID: orderNumber.toString(),
-        TimeZoneID: this.#timeZone.toString(),
         ReportType: 'S',
         Domain: 'Inventory'
+      },
+      {
+        'Time Zone': this.#timeZone
       }
     )
 
@@ -515,12 +523,12 @@ export class FasterReportExporter {
       page,
       '/Assets/W114 - Asset Master List',
       {
-        TimeZone: this.#timeZone.toString(),
         ReportType: 'S',
         Domain: 'Assets',
         Parent: 'Reports'
       },
       {
+        'Time Zone': this.#timeZone,
         'Primary Grouping': 'Organization',
         'Secondary Grouping': 'Department'
       }

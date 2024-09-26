@@ -4,12 +4,13 @@ declare const exportTypes: {
     Excel: string;
     Word: string;
 };
+type TimeZone = 'Atlantic' | 'Central' | 'Eastern' | 'Mountain' | 'Pacific';
 type ReportExportType = keyof typeof exportTypes;
 interface FasterReportExporterOptions {
     downloadFolderPath: string;
     timeoutMillis: number;
     showBrowserWindow: boolean;
-    timeZone: number;
+    timeZone: TimeZone;
 }
 export declare class FasterReportExporter {
     #private;
@@ -17,7 +18,7 @@ export declare class FasterReportExporter {
     setDownloadFolderPath(downloadFolderPath: string): void;
     setTimeoutMillis(timeoutMillis: number): void;
     showBrowserWindow(): void;
-    setTimeZone(timezone: number): void;
+    setTimeZone(timezone: TimeZone): void;
     exportPartOrderPrint(orderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportAssetMasterList(exportType?: ReportExportType): Promise<string>;
     exportWorkOrderCustomerPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
