@@ -1,5 +1,11 @@
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
+/* eslint-disable security/detect-non-literal-fs-filename */
+
 import assert from 'node:assert'
-import { describe, it } from 'node:test'
+import fs from 'node:fs'
+import { after, describe, it } from 'node:test'
+
+import Debug from 'debug'
 
 import { FasterReportExporter } from '../index.js'
 
@@ -8,17 +14,51 @@ import {
   fasterTenant,
   fasterUserName,
   partOrderNumber,
+  timeZone,
   workOrderNumber
 } from './config.js'
 
+const doCleanup = true
+
+const debug = Debug('faster-report-exporter:test')
+
 await describe('node-faster-report-exporter', async () => {
+  const filesToPurgeOnExit: string[] = []
+
   const reportExporter = new FasterReportExporter(
     fasterTenant,
     fasterUserName,
-    fasterPassword
+    fasterPassword,
+    {
+      timeoutMillis: 90_000,
+      showBrowserWindow: true,
+      timeZone
+    }
   )
 
-  // reportExporter.showBrowserWindow()
+  after(() => {
+    if (doCleanup) {
+      for (const fileToPurge of filesToPurgeOnExit) {
+        if (fileToPurge !== '' && fs.existsSync(fileToPurge)) {
+          debug(`Purging ${fileToPurge}`)
+          fs.unlinkSync(fileToPurge)
+        }
+      }
+    }
+  })
+
+  await it('Exports assets', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+    try {
+      const reportPath = await reportExporter.exportAssetMasterList('PDF')
+
+      assert(fs.existsSync(reportPath))
+
+      filesToPurgeOnExit.push(reportPath)
+    } catch (error) {
+      debug(error)
+      assert.fail()
+    }
+  })
 
   await it('Exports a part order', async () => {
     try {
@@ -27,7 +67,9 @@ await describe('node-faster-report-exporter', async () => {
         'Word'
       )
 
-      assert(reportPath)
+      assert(fs.existsSync(reportPath))
+
+      filesToPurgeOnExit.push(reportPath)
     } catch {
       assert.fail()
     }
@@ -35,10 +77,14 @@ await describe('node-faster-report-exporter', async () => {
 
   await it('Exports a work order customer print', async () => {
     try {
-      const reportPath =
-        await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber)
+      const reportPath = await reportExporter.exportWorkOrderCustomerPrint(
+        workOrderNumber,
+        'Excel'
+      )
 
-      assert(reportPath)
+      assert(fs.existsSync(reportPath))
+
+      filesToPurgeOnExit.push(reportPath)
     } catch {
       assert.fail()
     }
@@ -46,10 +92,14 @@ await describe('node-faster-report-exporter', async () => {
 
   await it('Exports a work order technician print', async () => {
     try {
-      const reportPath =
-        await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber)
+      const reportPath = await reportExporter.exportWorkOrderTechnicianPrint(
+        workOrderNumber,
+        'PDF'
+      )
 
-      console.log(reportPath)
+      assert(fs.existsSync(reportPath))
+
+      filesToPurgeOnExit.push(reportPath)
     } catch {
       assert.fail()
     }

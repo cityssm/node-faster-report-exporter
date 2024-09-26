@@ -4,7 +4,7 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import Debug from 'debug';
-import { delay, getElementOnPageBySelector } from './utilities.js';
+import { defaultDelayMillis, delay } from './utilities.js';
 const debug = Debug('faster-report-exporter:index');
 const exportTypes = {
     PDF: 'pdf',
@@ -12,30 +12,48 @@ const exportTypes = {
     Excel: 'xlsx',
     Word: 'docx'
 };
-const shortDelayMillis = 500;
 export class FasterReportExporter {
     #fasterBaseUrl;
     #fasterUserName;
     #fasterPassword;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
-    #timeoutMillis = 60_000;
-    constructor(fasterTenant, fasterUserName, fasterPassword) {
+    #timeoutMillis = 90_000;
+    #timeZone = 3;
+    constructor(fasterTenant, fasterUserName, fasterPassword, options = {}) {
         this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`;
         this.#fasterUserName = fasterUserName;
         this.#fasterPassword = fasterPassword;
+        if (options.downloadFolderPath !== undefined) {
+            this.setDownloadFolderPath(options.downloadFolderPath);
+        }
+        if (options.timeoutMillis !== undefined) {
+            this.setTimeoutMillis(options.timeoutMillis);
+        }
+        if (options.showBrowserWindow !== undefined && options.showBrowserWindow) {
+            this.showBrowserWindow();
+        }
+        if (options.timeZone !== undefined) {
+            this.#timeZone = options.timeZone;
+        }
     }
     setDownloadFolderPath(downloadFolderPath) {
+        if (!fs.existsSync(downloadFolderPath)) {
+            throw new Error(`Download folder path does not exist: ${downloadFolderPath}`);
+        }
         this.#downloadFolderPath = downloadFolderPath;
     }
     setTimeoutMillis(timeoutMillis) {
         this.#timeoutMillis = timeoutMillis;
-        if (timeoutMillis < 30_000) {
-            debug('Warning: Timeouts less than 30s are not recommended.');
+        if (timeoutMillis < 60_000) {
+            debug('Warning: Timeouts less than 60s are not recommended.');
         }
     }
     showBrowserWindow() {
         this.#useHeadlessBrowser = false;
+    }
+    setTimeZone(timezone) {
+        this.#timeZone = timezone;
     }
     async #getLoggedInFasterPage() {
         let browser;
@@ -71,8 +89,9 @@ export class FasterReportExporter {
                 if (submitButtonElement === null) {
                     throw new Error('Unable to locate Sign In button.');
                 }
+                await submitButtonElement.scrollIntoView();
                 await submitButtonElement.click();
-                await delay(shortDelayMillis);
+                await delay();
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
@@ -80,8 +99,9 @@ export class FasterReportExporter {
                     debug('Release notes page, continuing...');
                     const continueButtonElement = await page.$('#OKRadButon_input');
                     if (continueButtonElement !== null) {
+                        await continueButtonElement.scrollIntoView();
                         await continueButtonElement.click();
-                        await delay(shortDelayMillis);
+                        await delay();
                         await page.waitForNetworkIdle({
                             timeout: this.#timeoutMillis
                         });
@@ -102,7 +122,7 @@ export class FasterReportExporter {
             throw error;
         }
     }
-    async #navigateToFasterReportPage(browser, page, reportKey, reportParameters) {
+    async #navigateToFasterReportPage(browser, page, reportKey, reportParameters, reportFilters) {
         try {
             const reportUrl = new URL(`${this.#fasterBaseUrl}/Domains/Reports/ReportViewer.aspx`);
             reportUrl.searchParams.set('R', reportKey);
@@ -112,10 +132,56 @@ export class FasterReportExporter {
             await page.goto(reportUrl.href, {
                 timeout: this.#timeoutMillis
             });
-            await delay(shortDelayMillis);
+            await delay();
             await page.waitForNetworkIdle({
                 timeout: this.#timeoutMillis
             });
+            if (reportFilters !== undefined) {
+                await page.waitForSelector('label');
+                const labelElements = await page.$$('label');
+                const labelTextToInputId = {};
+                for (const labelElement of labelElements) {
+                    const labelText = await labelElement.evaluate((element) => {
+                        return element.textContent;
+                    }, labelElement);
+                    if (labelText === null) {
+                        continue;
+                    }
+                    labelTextToInputId[labelText] =
+                        (await labelElement.evaluate((element) => {
+                            return element.getAttribute('for');
+                        })) ?? '';
+                }
+                for (const [labelSearchText, inputValue] of Object.entries(reportFilters ?? {})) {
+                    let inputId = '';
+                    for (const [labelText, possibleInputId] of Object.entries(labelTextToInputId)) {
+                        if (labelText.includes(labelSearchText)) {
+                            inputId = possibleInputId;
+                            break;
+                        }
+                    }
+                    if (inputId === '') {
+                        throw new Error(`No filter found with label: ${labelSearchText}`);
+                    }
+                    const inputElement = (await page.waitForSelector(`#${inputId}`, {
+                        timeout: this.#timeoutMillis
+                    }));
+                    if (inputElement === null) {
+                        throw new Error(`No element found with id: ${inputId}`);
+                    }
+                    await page.type(`#${inputId}`, inputValue);
+                    if (Object.keys(reportFilters).length > 1) {
+                        await delay(1000);
+                    }
+                }
+                const submitButtonElement = await page.waitForSelector('a:has(input[type="submit"])');
+                await submitButtonElement?.scrollIntoView();
+                await submitButtonElement?.click();
+                await delay(1000);
+                await page.waitForNetworkIdle({
+                    timeout: this.#timeoutMillis
+                });
+            }
             return {
                 browser,
                 page
@@ -131,8 +197,12 @@ export class FasterReportExporter {
     }
     async #exportFasterReport(browser, page, exportType = 'PDF') {
         await page.bringToFront();
+        await page.waitForNetworkIdle({
+            timeout: this.#timeoutMillis
+        });
         debug(`Report Page Title: ${await page.title()}`);
         return await new Promise(async (resolve) => {
+            let downloadStarted = false;
             try {
                 const cdpSession = await browser.target().createCDPSession();
                 await cdpSession.send('Browser.setDownloadBehavior', {
@@ -155,8 +225,10 @@ export class FasterReportExporter {
                                 resolve(downloadedFilePath);
                             }
                         });
+                        downloadStarted = false;
                     }
                     else if (event.state === 'canceled') {
+                        downloadStarted = false;
                         throw new Error('Download cancelled.');
                     }
                 });
@@ -164,26 +236,35 @@ export class FasterReportExporter {
                     timeout: this.#timeoutMillis
                 });
                 debug(`Finding the print button for "${exportType}"...`);
-                const printOptionsMenuElement = await getElementOnPageBySelector(page, '#RvDetails_ctl05_ctl04_ctl00_ButtonLink', 20);
+                const printOptionsMenuElement = await page.waitForSelector('#RvDetails_ctl05_ctl04_ctl00_ButtonLink', { timeout: this.#timeoutMillis });
                 if (printOptionsMenuElement === null) {
-                    throw new Error('Unable to locate print options.');
+                    throw new Error('Unable to locate print options. Consider extending the timeout millis.');
                 }
                 await printOptionsMenuElement.click();
-                await delay(shortDelayMillis * 2);
+                await delay();
+                await delay();
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
-                const printOptionElement = await page.$(`#RvDetails_ctl05_ctl04_ctl00_Menu a[title^='${exportType}']`);
+                const printOptionElement = await page.waitForSelector(`#RvDetails_ctl05_ctl04_ctl00_Menu a[title^='${exportType}']`, { timeout: this.#timeoutMillis });
                 if (printOptionElement === null) {
                     throw new Error(`Unable to locate "${exportType}" print type.`);
                 }
                 debug(`Print button found for "${exportType}"...`);
+                await delay();
+                downloadStarted = true;
+                await printOptionElement.scrollIntoView();
                 await printOptionElement.click();
                 debug('Print selected.');
-                await delay(shortDelayMillis * 2);
+                await delay(1000);
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
+                let retries = this.#timeoutMillis / defaultDelayMillis;
+                while (downloadStarted && retries > 0) {
+                    await delay();
+                    retries -= 1;
+                }
             }
             finally {
                 try {
@@ -197,9 +278,22 @@ export class FasterReportExporter {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Part Order Print/W299 - OrderPrint', {
             OrderID: orderNumber.toString(),
-            TimeZoneID: '1113',
+            TimeZoneID: this.#timeZone.toString(),
             ReportType: 'S',
             Domain: 'Inventory'
+        });
+        return await this.#exportFasterReport(browser, page, exportType);
+    }
+    async exportAssetMasterList(exportType = 'PDF') {
+        const { browser, page } = await this.#getLoggedInFasterPage();
+        await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
+            TimeZone: this.#timeZone.toString(),
+            ReportType: 'S',
+            Domain: 'Assets',
+            Parent: 'Reports'
+        }, {
+            'Primary Grouping': 'Organization',
+            'Secondary Grouping': 'Department'
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
@@ -209,33 +303,27 @@ export class FasterReportExporter {
             await page.goto(`${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`, {
                 timeout: this.#timeoutMillis
             });
-            await delay(shortDelayMillis);
-            await page.waitForNetworkIdle();
-            const printElement = await getElementOnPageBySelector(page, printButtonSelector);
+            await delay();
+            await page.waitForNetworkIdle({
+                timeout: this.#timeoutMillis
+            });
+            const printElement = await page.waitForSelector(printButtonSelector, {
+                timeout: this.#timeoutMillis
+            });
             if (printElement === null) {
                 throw new Error('Unable to locate print link.');
             }
-            let pages = await browser.pages();
-            const beforePageCount = pages.length;
-            let afterPageCount = beforePageCount;
+            await printElement.scrollIntoView();
             await printElement.click();
-            let retries = 5;
-            while (beforePageCount === afterPageCount && retries > 0) {
-                await delay(shortDelayMillis);
-                await page.waitForNetworkIdle({
-                    timeout: this.#timeoutMillis
-                });
-                pages = await browser.pages();
-                afterPageCount = pages.length;
-                retries -= 1;
-            }
-            const newPage = pages.at(-1);
-            if (newPage === undefined) {
-                throw new Error('Unable to locate new page.');
-            }
-            await delay(shortDelayMillis);
+            const reportViewerTarget = await browser.waitForTarget((target) => {
+                return target.url().toLowerCase().includes('reportviewer.aspx');
+            }, {
+                timeout: this.#timeoutMillis
+            });
+            const newPage = await reportViewerTarget.asPage();
+            await delay();
             await newPage.bringToFront();
-            await delay(shortDelayMillis);
+            await delay();
             await newPage.waitForNetworkIdle({
                 timeout: this.#timeoutMillis
             });
@@ -243,7 +331,7 @@ export class FasterReportExporter {
         }
         catch (error) {
             try {
-                await browser.close();
+                await browser?.close();
             }
             catch { }
             throw error;

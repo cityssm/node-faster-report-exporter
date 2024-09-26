@@ -6,7 +6,7 @@
   "exports": "./index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=dev DEBUG=faster-report-exporter:* node --test",
-    "coverage": "c8 --reporter=lcov --reporter=text --reporter=text-summary node --test"
+    "coverage": "cross-env NODE_ENV=dev DEBUG=faster-report-exporter:* c8 --reporter=lcov --reporter=text --reporter=text-summary node --test"
   },
   "repository": {
     "type": "git",
@@ -27,8 +27,8 @@
   "homepage": "https://github.com/cityssm/node-faster-web-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^22.5.4",
-    "eslint-config-cityssm": "^8.0.0",
+    "@types/node": "^22.7.2",
+    "eslint-config-cityssm": "^10.0.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
