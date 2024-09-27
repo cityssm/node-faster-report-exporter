@@ -13,6 +13,7 @@ export declare class FasterReportExporter {
     showBrowserWindow(): void;
     setTimeZone(timezone: ReportTimeZone): void;
     exportPartOrderPrint(orderNumber: number, exportType?: ReportExportType): Promise<string>;
+    exportInventory(exportType?: ReportExportType): Promise<string>;
     exportAssetList(exportType?: ReportExportType): Promise<string>;
     exportWorkOrderCustomerPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportWorkOrderTechnicianPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;

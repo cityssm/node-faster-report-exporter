@@ -411,7 +411,7 @@ export class FasterReportExporter {
 
         let retries = this.#timeoutMillis / defaultDelayMillis
 
-        // eslint-disable-next-line sonarjs/no-infinite-loop, no-unmodified-loop-condition
+        // eslint-disable-next-line sonarjs/no-infinite-loop, no-unmodified-loop-condition, @typescript-eslint/no-unnecessary-condition
         while (downloadStarted && retries > 0) {
           await delay()
           retries--
@@ -424,9 +424,15 @@ export class FasterReportExporter {
     })
   }
 
+  /**
+   * Exports a Part Order Print (W299) report for a given order number.
+   * @param orderNumber - The order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
   async exportPartOrderPrint(
     orderNumber: number,
-    exportType: ReportExportType = 'PDF'
+    exportType?: ReportExportType
   ): Promise<string> {
     const { browser, page } = await this.#getLoggedInFasterPage()
 
@@ -447,7 +453,38 @@ export class FasterReportExporter {
     return await this.#exportFasterReport(browser, page, exportType)
   }
 
-  async exportAssetList(exportType: ReportExportType = 'PDF'): Promise<string> {
+  /**
+   * Exports an Inventory Report (W200).
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportInventory(exportType?: ReportExportType): Promise<string> {
+    const { browser, page } = await this.#getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      '/Inventory/W200 - Inventory Report',
+      {
+        ReportType: 'S',
+        Domain: 'Inventory',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Grouping within Storeroom': 'Item Category'
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Export an Asset Master List (W114) report.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportAssetList(exportType?: ReportExportType): Promise<string> {
     const { browser, page } = await this.#getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(
@@ -533,6 +570,12 @@ export class FasterReportExporter {
     }
   }
 
+  /**
+   * Exports the Customer Print (W398) for a given work order.
+   * @param workOrderNumber - The work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
   async exportWorkOrderCustomerPrint(
     workOrderNumber: number,
     exportType: ReportExportType = 'PDF'
@@ -545,6 +588,12 @@ export class FasterReportExporter {
     )
   }
 
+  /**
+   * Exports the Technician Print (W399) for a given work order.
+   * @param workOrderNumber - The work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
   async exportWorkOrderTechnicianPrint(
     workOrderNumber: number,
     exportType: ReportExportType = 'PDF'

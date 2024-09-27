@@ -228,7 +228,7 @@ export class FasterReportExporter {
             }
         });
     }
-    async exportPartOrderPrint(orderNumber, exportType = 'PDF') {
+    async exportPartOrderPrint(orderNumber, exportType) {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Part Order Print/W299 - OrderPrint', {
             OrderID: orderNumber.toString(),
@@ -239,7 +239,19 @@ export class FasterReportExporter {
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
-    async exportAssetList(exportType = 'PDF') {
+    async exportInventory(exportType) {
+        const { browser, page } = await this.#getLoggedInFasterPage();
+        await this.#navigateToFasterReportPage(browser, page, '/Inventory/W200 - Inventory Report', {
+            ReportType: 'S',
+            Domain: 'Inventory',
+            Parent: 'Reports'
+        }, {
+            'Time Zone': this.#timeZone,
+            'Grouping within Storeroom': 'Item Category'
+        });
+        return await this.#exportFasterReport(browser, page, exportType);
+    }
+    async exportAssetList(exportType) {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
             ReportType: 'S',

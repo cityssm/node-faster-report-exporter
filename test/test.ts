@@ -66,6 +66,23 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
+  await it(
+    'Exports inventory',
+    { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    async () => {
+      try {
+        const reportPath = await reportExporter.exportInventory('PDF')
+
+        assert(fs.existsSync(reportPath))
+
+        filesToPurgeOnExit.push(reportPath)
+      } catch (error) {
+        debug(error)
+        assert.fail()
+      }
+    }
+  )
+
   await it('Exports a part order', async () => {
     try {
       const reportPath = await reportExporter.exportPartOrderPrint(
