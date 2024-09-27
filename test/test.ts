@@ -37,6 +37,7 @@ await describe('node-faster-report-exporter', async () => {
   )
 
   after(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (doCleanup) {
       for (const fileToPurge of filesToPurgeOnExit) {
         if (fileToPurge !== '' && fs.existsSync(fileToPurge)) {
@@ -49,7 +50,7 @@ await describe('node-faster-report-exporter', async () => {
 
   await it('Exports asset master list', { timeout: 5 * 60 * 60 * 1000 }, async () => {
     try {
-      const reportPath = await reportExporter.exportAssetMasterList('PDF')
+      const reportPath = await reportExporter.exportAssetList('PDF')
 
       assert(fs.existsSync(reportPath))
 

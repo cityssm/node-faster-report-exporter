@@ -4,21 +4,17 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import Debug from 'debug';
+import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
+import { applyReportFilters } from './puppeteerHelpers.js';
 import { defaultDelayMillis, delay } from './utilities.js';
 const debug = Debug('faster-report-exporter:index');
-const exportTypes = {
-    PDF: 'pdf',
-    CSV: 'csv',
-    Excel: 'xlsx',
-    Word: 'docx'
-};
 export class FasterReportExporter {
     #fasterBaseUrl;
     #fasterUserName;
     #fasterPassword;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
-    #timeoutMillis = 90_000;
+    #timeoutMillis = Math.max(90_000, minimumRecommendedTimeoutSeconds);
     #timeZone = 'Eastern';
     constructor(fasterTenant, fasterUserName, fasterPassword, options = {}) {
         this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`;
@@ -45,8 +41,8 @@ export class FasterReportExporter {
     }
     setTimeoutMillis(timeoutMillis) {
         this.#timeoutMillis = timeoutMillis;
-        if (timeoutMillis < 60_000) {
-            debug('Warning: Timeouts less than 60s are not recommended.');
+        if (timeoutMillis < minimumRecommendedTimeoutSeconds * 1000) {
+            debug(`Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`);
         }
     }
     showBrowserWindow() {
@@ -137,49 +133,8 @@ export class FasterReportExporter {
                 timeout: this.#timeoutMillis
             });
             if (reportFilters !== undefined) {
-                await page.waitForSelector('label');
-                const labelElements = await page.$$('label');
-                const labelTextToInputId = {};
-                for (const labelElement of labelElements) {
-                    const labelText = await labelElement.evaluate((element) => {
-                        return element.textContent;
-                    }, labelElement);
-                    if (labelText === null) {
-                        continue;
-                    }
-                    labelTextToInputId[labelText] =
-                        (await labelElement.evaluate((element) => {
-                            return element.getAttribute('for');
-                        })) ?? '';
-                }
-                for (const [labelSearchText, inputValue] of Object.entries(reportFilters ?? {})) {
-                    let inputId = '';
-                    for (const [labelText, possibleInputId] of Object.entries(labelTextToInputId)) {
-                        if (labelText.includes(labelSearchText)) {
-                            inputId = possibleInputId;
-                            break;
-                        }
-                    }
-                    if (inputId === '') {
-                        throw new Error(`No filter found with label: ${labelSearchText}`);
-                    }
-                    const inputElement = (await page.waitForSelector(`#${inputId}`, {
-                        timeout: this.#timeoutMillis
-                    }));
-                    if (inputElement === null) {
-                        throw new Error(`No element found with id: ${inputId}`);
-                    }
-                    await page.type(`#${inputId}`, inputValue);
-                    if (Object.keys(reportFilters).length > 1) {
-                        await delay(1000);
-                    }
-                }
-                const submitButtonElement = await page.waitForSelector('a:has(input[type="submit"])');
-                await submitButtonElement?.scrollIntoView();
-                await submitButtonElement?.click();
-                await delay(1000);
-                await page.waitForNetworkIdle({
-                    timeout: this.#timeoutMillis
+                await applyReportFilters(page, reportFilters, {
+                    timeoutMillis: this.#timeoutMillis
                 });
             }
             return {
@@ -189,7 +144,7 @@ export class FasterReportExporter {
         }
         catch (error) {
             try {
-                await browser?.close();
+                await browser.close();
             }
             catch { }
             throw error;
@@ -214,7 +169,7 @@ export class FasterReportExporter {
                     if (event.state === 'completed') {
                         debug('Download complete.');
                         const downloadedFilePath = path.join(this.#downloadFolderPath, event.guid);
-                        const newFilePath = `${downloadedFilePath}.${exportTypes[exportType]}`;
+                        const newFilePath = `${downloadedFilePath}.${reportExportTypes[exportType]}`;
                         fs.rename(downloadedFilePath, newFilePath, (error) => {
                             if (error === null) {
                                 debug(`File: ${newFilePath}`);
@@ -268,7 +223,7 @@ export class FasterReportExporter {
             }
             finally {
                 try {
-                    await browser?.close();
+                    await browser.close();
                 }
                 catch { }
             }
@@ -285,7 +240,7 @@ export class FasterReportExporter {
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
-    async exportAssetMasterList(exportType = 'PDF') {
+    async exportAssetList(exportType = 'PDF') {
         const { browser, page } = await this.#getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
             ReportType: 'S',
@@ -332,7 +287,7 @@ export class FasterReportExporter {
         }
         catch (error) {
             try {
-                await browser?.close();
+                await browser.close();
             }
             catch { }
             throw error;

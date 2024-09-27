@@ -6,31 +6,25 @@ import { URL } from 'node:url'
 import puppeteerLaunch, { type puppeteer } from '@cityssm/puppeteer-launch'
 import Debug from 'debug'
 
+import {
+  minimumRecommendedTimeoutSeconds,
+  reportExportTypes
+} from './lookups.js'
+import { applyReportFilters } from './puppeteerHelpers.js'
+import type {
+  ReportExportType,
+  ReportParameters,
+  ReportTimeZone
+} from './types.js'
 import { defaultDelayMillis, delay } from './utilities.js'
 
 const debug = Debug('faster-report-exporter:index')
-
-interface ReportParameters extends Record<string, string> {
-  ReportType: 'S'
-  Domain: 'Inventory' | 'Maintenance' | 'Assets'
-}
-
-const exportTypes = {
-  PDF: 'pdf',
-  CSV: 'csv',
-  Excel: 'xlsx',
-  Word: 'docx'
-}
-
-type TimeZone = 'Atlantic' | 'Central' | 'Eastern' | 'Mountain' | 'Pacific'
-
-type ReportExportType = keyof typeof exportTypes
 
 interface FasterReportExporterOptions {
   downloadFolderPath: string
   timeoutMillis: number
   showBrowserWindow: boolean
-  timeZone: TimeZone
+  timeZone: ReportTimeZone
 }
 
 export class FasterReportExporter {
@@ -41,15 +35,18 @@ export class FasterReportExporter {
   #downloadFolderPath = os.tmpdir()
 
   #useHeadlessBrowser = true
-  #timeoutMillis = 90_000
-  #timeZone: TimeZone = 'Eastern'
+
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  #timeoutMillis = Math.max(90_000, minimumRecommendedTimeoutSeconds)
+
+  #timeZone: ReportTimeZone = 'Eastern'
 
   /**
    * Initializes the FasterReportExporter.
-   * @param fasterTenant - The subdomain portion of the FASTER Web URL before ".fasterwebcloud.com"
+   * @param fasterTenant - The subdomain of the FASTER Web URL before ".fasterwebcloud.com"
    * @param fasterUserName - The user name
    * @param fasterPassword - The password
-   * @param options - Additional options
+   * @param options - Options
    */
   constructor(
     fasterTenant: string,
@@ -79,8 +76,8 @@ export class FasterReportExporter {
   }
 
   /**
-   * Sets the folder where downloaded reports should be saved.
-   * @param downloadFolderPath - The folder where downloaded reports should be saved.
+   * Sets the folder where downloaded reports are saved.
+   * @param downloadFolderPath - The folder where downloaded reports are saved.
    */
   setDownloadFolderPath(downloadFolderPath: string): void {
     // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -100,8 +97,11 @@ export class FasterReportExporter {
   setTimeoutMillis(timeoutMillis: number): void {
     this.#timeoutMillis = timeoutMillis
 
-    if (timeoutMillis < 60_000) {
-      debug('Warning: Timeouts less than 60s are not recommended.')
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    if (timeoutMillis < minimumRecommendedTimeoutSeconds * 1000) {
+      debug(
+        `Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`
+      )
     }
   }
 
@@ -114,10 +114,10 @@ export class FasterReportExporter {
   }
 
   /**
-   * Changes the time zone parameter used in many reports.
+   * Changes the time zone parameter used in reports.
    * @param timezone - The preferred report time zone.
    */
-  setTimeZone(timezone: TimeZone): void {
+  setTimeZone(timezone: ReportTimeZone): void {
     this.#timeZone = timezone
   }
 
@@ -268,73 +268,8 @@ export class FasterReportExporter {
       })
 
       if (reportFilters !== undefined) {
-        await page.waitForSelector('label')
-
-        const labelElements = await page.$$('label')
-
-        const labelTextToInputId: Record<string, string> = {}
-
-        for (const labelElement of labelElements) {
-          const labelText = await labelElement.evaluate((element) => {
-            return element.textContent
-          }, labelElement)
-
-          if (labelText === null) {
-            continue
-          }
-
-          labelTextToInputId[labelText] =
-            (await labelElement.evaluate((element) => {
-              return element.getAttribute('for')
-            })) ?? ''
-        }
-
-        for (const [labelSearchText, inputValue] of Object.entries(
-          reportFilters ?? {}
-        )) {
-          let inputId = ''
-
-          for (const [labelText, possibleInputId] of Object.entries(
-            labelTextToInputId
-          )) {
-            if (labelText.includes(labelSearchText)) {
-              inputId = possibleInputId
-              break
-            }
-          }
-
-          if (inputId === '') {
-            throw new Error(`No filter found with label: ${labelSearchText}`)
-          }
-
-          const inputElement = (await page.waitForSelector(`#${inputId}`, {
-            timeout: this.#timeoutMillis
-          })) as puppeteer.ElementHandle<
-            HTMLSelectElement | HTMLInputElement
-          > | null
-
-          if (inputElement === null) {
-            throw new Error(`No element found with id: ${inputId}`)
-          }
-
-          await page.type(`#${inputId}`, inputValue)
-
-          if (Object.keys(reportFilters).length > 1) {
-            await delay(1000)
-          }
-        }
-
-        const submitButtonElement = await page.waitForSelector(
-          'a:has(input[type="submit"])'
-        )
-
-        await submitButtonElement?.scrollIntoView()
-        await submitButtonElement?.click()
-
-        await delay(1000)
-
-        await page.waitForNetworkIdle({
-          timeout: this.#timeoutMillis
+        await applyReportFilters(page, reportFilters, {
+          timeoutMillis: this.#timeoutMillis
         })
       }
 
@@ -344,7 +279,7 @@ export class FasterReportExporter {
       }
     } catch (error) {
       try {
-        await browser?.close()
+        await browser.close()
       } catch {}
 
       // eslint-disable-next-line @typescript-eslint/only-throw-error
@@ -399,7 +334,7 @@ export class FasterReportExporter {
             )
 
             // eslint-disable-next-line security/detect-object-injection
-            const newFilePath = `${downloadedFilePath}.${exportTypes[exportType]}`
+            const newFilePath = `${downloadedFilePath}.${reportExportTypes[exportType]}`
 
             // eslint-disable-next-line security/detect-non-literal-fs-filename
             fs.rename(downloadedFilePath, newFilePath, (error) => {
@@ -484,7 +419,7 @@ export class FasterReportExporter {
         }
       } finally {
         try {
-          await browser?.close()
+          await browser.close()
         } catch {}
       }
     })
@@ -513,7 +448,7 @@ export class FasterReportExporter {
     return await this.#exportFasterReport(browser, page, exportType)
   }
 
-  async exportAssetMasterList(
+  async exportAssetList(
     exportType: ReportExportType = 'PDF'
   ): Promise<string> {
     const { browser, page } = await this.#getLoggedInFasterPage()
@@ -593,7 +528,7 @@ export class FasterReportExporter {
       return await this.#exportFasterReport(browser, newPage, exportType)
     } catch (error) {
       try {
-        await browser?.close()
+        await browser.close()
       } catch {}
 
       // eslint-disable-next-line @typescript-eslint/only-throw-error

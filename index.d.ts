@@ -1,16 +1,9 @@
-declare const exportTypes: {
-    PDF: string;
-    CSV: string;
-    Excel: string;
-    Word: string;
-};
-type TimeZone = 'Atlantic' | 'Central' | 'Eastern' | 'Mountain' | 'Pacific';
-type ReportExportType = keyof typeof exportTypes;
+import type { ReportExportType, ReportTimeZone } from './types.js';
 interface FasterReportExporterOptions {
     downloadFolderPath: string;
     timeoutMillis: number;
     showBrowserWindow: boolean;
-    timeZone: TimeZone;
+    timeZone: ReportTimeZone;
 }
 export declare class FasterReportExporter {
     #private;
@@ -18,9 +11,9 @@ export declare class FasterReportExporter {
     setDownloadFolderPath(downloadFolderPath: string): void;
     setTimeoutMillis(timeoutMillis: number): void;
     showBrowserWindow(): void;
-    setTimeZone(timezone: TimeZone): void;
+    setTimeZone(timezone: ReportTimeZone): void;
     exportPartOrderPrint(orderNumber: number, exportType?: ReportExportType): Promise<string>;
-    exportAssetMasterList(exportType?: ReportExportType): Promise<string>;
+    exportAssetList(exportType?: ReportExportType): Promise<string>;
     exportWorkOrderCustomerPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportWorkOrderTechnicianPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
 }
