@@ -67,6 +67,10 @@ export async function applyReportFilters(
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     if (Object.keys(reportFilters).length > 1) {
       await delay(longDelayMillis)
+
+      await page.waitForNetworkIdle({
+        timeout: options.timeoutMillis
+      })
     }
   }
 

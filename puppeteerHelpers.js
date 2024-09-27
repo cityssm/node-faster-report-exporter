@@ -35,6 +35,9 @@ export async function applyReportFilters(page, reportFilters, options) {
         await page.type(`#${inputId}`, inputValue);
         if (Object.keys(reportFilters).length > 1) {
             await delay(longDelayMillis);
+            await page.waitForNetworkIdle({
+                timeout: options.timeoutMillis
+            });
         }
     }
     const submitButtonElement = await page.waitForSelector('a:has(input[type="submit"])');
