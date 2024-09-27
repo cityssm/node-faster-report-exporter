@@ -1,6 +1,6 @@
 {
   "name": "@cityssm/faster-report-exporter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "On demand exports of selected reports from the FASTER Web Fleet Management System.",
   "exports": "./index.js",
