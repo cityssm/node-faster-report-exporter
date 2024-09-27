@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cityssm/node-faster-web-exporter.git"
+    "url": "git+https://github.com/cityssm/node-faster-report-exporter.git"
   },
   "keywords": [
     "faster-web",
@@ -22,9 +22,9 @@
   "author": "The Corporation of the City of Sault Ste. Marie",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cityssm/node-faster-web-exporter/issues"
+    "url": "https://github.com/cityssm/node-faster-report-exporter/issues"
   },
-  "homepage": "https://github.com/cityssm/node-faster-web-exporter#readme",
+  "homepage": "https://github.com/cityssm/node-faster-report-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/node": "^22.7.3",
