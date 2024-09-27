@@ -1,5 +1,4 @@
-import { delay } from './utilities.js';
-const oneSecondMillis = 1000;
+import { delay, longDelayMillis } from './utilities.js';
 export async function applyReportFilters(page, reportFilters, options) {
     await page.waitForSelector('label');
     const labelElements = await page.$$('label');
@@ -35,13 +34,13 @@ export async function applyReportFilters(page, reportFilters, options) {
         }
         await page.type(`#${inputId}`, inputValue);
         if (Object.keys(reportFilters).length > 1) {
-            await delay(Math.max(options.timeoutMillis, oneSecondMillis));
+            await delay(longDelayMillis);
         }
     }
     const submitButtonElement = await page.waitForSelector('a:has(input[type="submit"])');
     await submitButtonElement?.scrollIntoView();
     await submitButtonElement?.click();
-    await delay(Math.max(options.timeoutMillis, oneSecondMillis));
+    await delay(longDelayMillis);
     await page.waitForNetworkIdle({
         timeout: options.timeoutMillis
     });

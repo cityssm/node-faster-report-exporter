@@ -1,8 +1,6 @@
 import type { puppeteer } from '@cityssm/puppeteer-launch'
 
-import { delay } from './utilities.js'
-
-const oneSecondMillis = 1000
+import { delay, longDelayMillis } from './utilities.js'
 
 /**
  * Populates the report filters on a Report Viewer page.
@@ -68,7 +66,7 @@ export async function applyReportFilters(
 
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     if (Object.keys(reportFilters).length > 1) {
-      await delay(Math.max(options.timeoutMillis, oneSecondMillis))
+      await delay(longDelayMillis)
     }
   }
 
@@ -79,7 +77,7 @@ export async function applyReportFilters(
   await submitButtonElement?.scrollIntoView()
   await submitButtonElement?.click()
 
-  await delay(Math.max(options.timeoutMillis, oneSecondMillis))
+  await delay(longDelayMillis)
 
   await page.waitForNetworkIdle({
     timeout: options.timeoutMillis
