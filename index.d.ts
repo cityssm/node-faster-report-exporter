@@ -1,5 +1,5 @@
 import type { ReportExportType, ReportTimeZone } from './types.js';
-interface FasterReportExporterOptions {
+export interface FasterReportExporterOptions {
     downloadFolderPath: string;
     timeoutMillis: number;
     showBrowserWindow: boolean;
@@ -18,4 +18,3 @@ export declare class FasterReportExporter {
     exportWorkOrderCustomerPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportWorkOrderTechnicianPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
 }
-export {};

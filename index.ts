@@ -20,7 +20,7 @@ import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js'
 
 const debug = Debug('faster-report-exporter:index')
 
-interface FasterReportExporterOptions {
+export interface FasterReportExporterOptions {
   downloadFolderPath: string
   timeoutMillis: number
   showBrowserWindow: boolean
