@@ -16,7 +16,7 @@ import type {
   ReportParameters,
   ReportTimeZone
 } from './types.js'
-import { defaultDelayMillis, delay } from './utilities.js'
+import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js'
 
 const debug = Debug('faster-report-exporter:index')
 
@@ -377,8 +377,7 @@ export class FasterReportExporter {
 
         await printOptionsMenuElement.click()
 
-        await delay()
-        await delay()
+        await delay(longDelayMillis)
 
         await page.waitForNetworkIdle({
           timeout: this.#timeoutMillis
@@ -404,7 +403,7 @@ export class FasterReportExporter {
 
         debug('Print selected.')
 
-        await delay(1000)
+        await delay(longDelayMillis)
 
         await page.waitForNetworkIdle({
           timeout: this.#timeoutMillis
@@ -415,7 +414,7 @@ export class FasterReportExporter {
         // eslint-disable-next-line sonarjs/no-infinite-loop, no-unmodified-loop-condition
         while (downloadStarted && retries > 0) {
           await delay()
-          retries -= 1
+          retries--
         }
       } finally {
         try {
@@ -448,9 +447,7 @@ export class FasterReportExporter {
     return await this.#exportFasterReport(browser, page, exportType)
   }
 
-  async exportAssetList(
-    exportType: ReportExportType = 'PDF'
-  ): Promise<string> {
+  async exportAssetList(exportType: ReportExportType = 'PDF'): Promise<string> {
     const { browser, page } = await this.#getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(

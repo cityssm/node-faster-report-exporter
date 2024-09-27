@@ -30,6 +30,7 @@ await describe('node-faster-report-exporter', async () => {
     fasterUserName,
     fasterPassword,
     {
+      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
       timeoutMillis: 90_000,
       showBrowserWindow: true,
       timeZone
@@ -48,18 +49,22 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it('Exports asset master list', { timeout: 5 * 60 * 60 * 1000 }, async () => {
-    try {
-      const reportPath = await reportExporter.exportAssetList('PDF')
+  await it(
+    'Exports asset list',
+    { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    async () => {
+      try {
+        const reportPath = await reportExporter.exportAssetList('PDF')
 
-      assert(fs.existsSync(reportPath))
+        assert(fs.existsSync(reportPath))
 
-      filesToPurgeOnExit.push(reportPath)
-    } catch (error) {
-      debug(error)
-      assert.fail()
+        filesToPurgeOnExit.push(reportPath)
+      } catch (error) {
+        debug(error)
+        assert.fail()
+      }
     }
-  })
+  )
 
   await it('Exports a part order', async () => {
     try {

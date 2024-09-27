@@ -23,7 +23,7 @@ await describe('node-faster-report-exporter', async () => {
             }
         }
     });
-    await it('Exports asset master list', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+    await it('Exports asset list', { timeout: 5 * 60 * 60 * 1000 }, async () => {
         try {
             const reportPath = await reportExporter.exportAssetList('PDF');
             assert(fs.existsSync(reportPath));

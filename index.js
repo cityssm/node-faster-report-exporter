@@ -6,7 +6,7 @@ import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import Debug from 'debug';
 import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
 import { applyReportFilters } from './puppeteerHelpers.js';
-import { defaultDelayMillis, delay } from './utilities.js';
+import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js';
 const debug = Debug('faster-report-exporter:index');
 export class FasterReportExporter {
     #fasterBaseUrl;
@@ -196,8 +196,7 @@ export class FasterReportExporter {
                     throw new Error('Unable to locate print options. Consider extending the timeout millis.');
                 }
                 await printOptionsMenuElement.click();
-                await delay();
-                await delay();
+                await delay(longDelayMillis);
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
@@ -211,14 +210,14 @@ export class FasterReportExporter {
                 await printOptionElement.scrollIntoView();
                 await printOptionElement.click();
                 debug('Print selected.');
-                await delay(1000);
+                await delay(longDelayMillis);
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
                 let retries = this.#timeoutMillis / defaultDelayMillis;
                 while (downloadStarted && retries > 0) {
                     await delay();
-                    retries -= 1;
+                    retries--;
                 }
             }
             finally {

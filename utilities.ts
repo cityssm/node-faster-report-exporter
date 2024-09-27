@@ -1,4 +1,5 @@
 export const defaultDelayMillis = 500
+export const longDelayMillis = 1000
 
 /**
  * Pause execution for a given amount of time.
