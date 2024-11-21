@@ -308,7 +308,7 @@ export class FasterReportExporter {
     debug(`Report Page Title: ${await page.title()}`)
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor, sonarjs/no-misused-promises
-    return await new Promise(async (resolve) => {
+    const downloadPromise = new Promise<string>(async (resolve) => {
       let downloadStarted = false
 
       try {
@@ -422,6 +422,8 @@ export class FasterReportExporter {
         } catch {}
       }
     })
+
+    return await Promise.resolve(downloadPromise)
   }
 
   /**
@@ -500,6 +502,38 @@ export class FasterReportExporter {
         'Time Zone': this.#timeZone,
         'Primary Grouping': 'Organization',
         'Secondary Grouping': 'Department'
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  async exportWorkOrderDetails(
+    minWorkOrderNumber: number,
+    maxWorkOrderNumber?: number,
+    exportType?: ReportExportType
+  ): Promise<string> {
+    const minWorkOrderNumberString = minWorkOrderNumber.toString()
+    const maxWorkOrderNumberString = (
+      maxWorkOrderNumber ?? minWorkOrderNumber
+    ).toString()
+
+    const { browser, page } = await this.#getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      // eslint-disable-next-line no-secrets/no-secrets
+      '/Maintenance/W300n - WorkOrderDetailsByWONumber',
+      {
+        ReportType: 'S',
+        Domain: 'Maintenance',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Beginning Work Order Number': minWorkOrderNumberString,
+        'Ending Work Order Number': maxWorkOrderNumberString
       }
     )
 

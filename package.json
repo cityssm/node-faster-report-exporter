@@ -27,8 +27,8 @@
   "homepage": "https://github.com/cityssm/node-faster-report-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^22.7.3",
-    "eslint-config-cityssm": "^10.1.1",
+    "@types/node": "^22.9.1",
+    "eslint-config-cityssm": "^16.0.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {

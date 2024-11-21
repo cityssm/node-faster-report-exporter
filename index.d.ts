@@ -15,6 +15,7 @@ export declare class FasterReportExporter {
     exportPartOrderPrint(orderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportInventory(exportType?: ReportExportType): Promise<string>;
     exportAssetList(exportType?: ReportExportType): Promise<string>;
+    exportWorkOrderDetails(minWorkOrderNumber: number, maxWorkOrderNumber?: number, exportType?: ReportExportType): Promise<string>;
     exportWorkOrderCustomerPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportWorkOrderTechnicianPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
 }

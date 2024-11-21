@@ -55,6 +55,17 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
+    await it('Exports work order details', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+        try {
+            const reportPath = await reportExporter.exportWorkOrderDetails(1, 10, 'PDF');
+            assert(fs.existsSync(reportPath));
+            filesToPurgeOnExit.push(reportPath);
+        }
+        catch (error) {
+            debug(error);
+            assert.fail();
+        }
+    });
     await it('Exports a work order customer print', async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber, 'Excel');

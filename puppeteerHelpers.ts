@@ -62,7 +62,17 @@ export async function applyReportFilters(
       throw new Error(`No element found with id: ${inputId}`)
     }
 
-    await page.type(`#${inputId}`, inputValue)
+    await inputElement.evaluate((element) => {
+      if (element.tagName === 'INPUT') {
+        element.value = ''
+      }
+    })
+
+    await inputElement.type(inputValue)
+
+    await inputElement.evaluate((element) => {
+      ;(element as HTMLInputElement).blur()
+    })
 
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     if (Object.keys(reportFilters).length > 1) {

@@ -32,7 +32,16 @@ export async function applyReportFilters(page, reportFilters, options) {
         if (inputElement === null) {
             throw new Error(`No element found with id: ${inputId}`);
         }
-        await page.type(`#${inputId}`, inputValue);
+        await inputElement.evaluate((element) => {
+            if (element.tagName === 'INPUT') {
+                element.value = '';
+            }
+        });
+        await inputElement.type(inputValue);
+        await inputElement.evaluate((element) => {
+            ;
+            element.blur();
+        });
         if (Object.keys(reportFilters).length > 1) {
             await delay(longDelayMillis);
             await page.waitForNetworkIdle({

@@ -156,7 +156,7 @@ export class FasterReportExporter {
             timeout: this.#timeoutMillis
         });
         debug(`Report Page Title: ${await page.title()}`);
-        return await new Promise(async (resolve) => {
+        const downloadPromise = new Promise(async (resolve) => {
             let downloadStarted = false;
             try {
                 const cdpSession = await browser.target().createCDPSession();
@@ -227,6 +227,7 @@ export class FasterReportExporter {
                 catch { }
             }
         });
+        return await Promise.resolve(downloadPromise);
     }
     async exportPartOrderPrint(orderNumber, exportType) {
         const { browser, page } = await this.#getLoggedInFasterPage();
@@ -261,6 +262,21 @@ export class FasterReportExporter {
             'Time Zone': this.#timeZone,
             'Primary Grouping': 'Organization',
             'Secondary Grouping': 'Department'
+        });
+        return await this.#exportFasterReport(browser, page, exportType);
+    }
+    async exportWorkOrderDetails(minWorkOrderNumber, maxWorkOrderNumber, exportType) {
+        const minWorkOrderNumberString = minWorkOrderNumber.toString();
+        const maxWorkOrderNumberString = (maxWorkOrderNumber ?? minWorkOrderNumber).toString();
+        const { browser, page } = await this.#getLoggedInFasterPage();
+        await this.#navigateToFasterReportPage(browser, page, '/Maintenance/W300n - WorkOrderDetailsByWONumber', {
+            ReportType: 'S',
+            Domain: 'Maintenance',
+            Parent: 'Reports'
+        }, {
+            'Time Zone': this.#timeZone,
+            'Beginning Work Order Number': minWorkOrderNumberString,
+            'Ending Work Order Number': maxWorkOrderNumberString
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
