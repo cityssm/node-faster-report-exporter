@@ -4,16 +4,12 @@ export async function applyReportFilters(page, reportFilters, options) {
     const labelElements = await page.$$('label');
     const labelTextToInputId = {};
     for (const labelElement of labelElements) {
-        const labelText = await labelElement.evaluate((element) => {
-            return element.textContent;
-        }, labelElement);
+        const labelText = await labelElement.evaluate((element) => element.textContent, labelElement);
         if (labelText === null) {
             continue;
         }
         labelTextToInputId[labelText] =
-            (await labelElement.evaluate((element) => {
-                return element.getAttribute('for');
-            })) ?? '';
+            (await labelElement.evaluate((element) => element.getAttribute('for'))) ?? '';
     }
     for (const [labelSearchText, inputValue] of Object.entries(reportFilters)) {
         let inputId = '';

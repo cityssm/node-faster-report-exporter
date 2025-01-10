@@ -30,7 +30,6 @@ await describe('node-faster-report-exporter', async () => {
     fasterUserName,
     fasterPassword,
     {
-      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
       timeoutMillis: 90_000,
       showBrowserWindow: true,
       timeZone

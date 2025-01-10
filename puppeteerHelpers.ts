@@ -1,3 +1,6 @@
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+
 import type { puppeteer } from '@cityssm/puppeteer-launch'
 
 import { delay, longDelayMillis } from './utilities.js'
@@ -23,9 +26,7 @@ export async function applyReportFilters(
   const labelTextToInputId: Record<string, string> = {}
 
   for (const labelElement of labelElements) {
-    const labelText = await labelElement.evaluate((element) => {
-      return element.textContent
-    }, labelElement)
+    const labelText = await labelElement.evaluate((element) => element.textContent, labelElement)
 
     if (labelText === null) {
       continue
@@ -33,9 +34,7 @@ export async function applyReportFilters(
 
     // eslint-disable-next-line security/detect-object-injection
     labelTextToInputId[labelText] =
-      (await labelElement.evaluate((element) => {
-        return element.getAttribute('for')
-      })) ?? ''
+      (await labelElement.evaluate((element) => element.getAttribute('for'))) ?? ''
   }
 
   for (const [labelSearchText, inputValue] of Object.entries(reportFilters)) {
@@ -74,7 +73,7 @@ export async function applyReportFilters(
       ;(element as HTMLInputElement).blur()
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+     
     if (Object.keys(reportFilters).length > 1) {
       await delay(longDelayMillis)
 
