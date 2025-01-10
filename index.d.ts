@@ -1,3 +1,4 @@
+import { type puppeteer } from '@cityssm/puppeteer-launch';
 import type { ReportExportType, ReportTimeZone } from './types.js';
 export interface FasterReportExporterOptions {
     downloadFolderPath: string;
@@ -12,6 +13,10 @@ export declare class FasterReportExporter {
     setTimeoutMillis(timeoutMillis: number): void;
     showBrowserWindow(): void;
     setTimeZone(timezone: ReportTimeZone): void;
+    _getLoggedInFasterPage(): Promise<{
+        browser: puppeteer.Browser;
+        page: puppeteer.Page;
+    }>;
     exportPartOrderPrint(orderNumber: number, exportType?: ReportExportType): Promise<string>;
     exportInventory(exportType?: ReportExportType): Promise<string>;
     exportAssetList(exportType?: ReportExportType): Promise<string>;

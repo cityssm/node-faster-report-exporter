@@ -51,7 +51,7 @@ export class FasterReportExporter {
     setTimeZone(timezone) {
         this.#timeZone = timezone;
     }
-    async #getLoggedInFasterPage() {
+    async _getLoggedInFasterPage() {
         let browser;
         try {
             browser = await puppeteerLaunch({
@@ -230,7 +230,7 @@ export class FasterReportExporter {
         return await Promise.resolve(downloadPromise);
     }
     async exportPartOrderPrint(orderNumber, exportType) {
-        const { browser, page } = await this.#getLoggedInFasterPage();
+        const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Part Order Print/W299 - OrderPrint', {
             OrderID: orderNumber.toString(),
             ReportType: 'S',
@@ -241,7 +241,7 @@ export class FasterReportExporter {
         return await this.#exportFasterReport(browser, page, exportType);
     }
     async exportInventory(exportType) {
-        const { browser, page } = await this.#getLoggedInFasterPage();
+        const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Inventory/W200 - Inventory Report', {
             ReportType: 'S',
             Domain: 'Inventory',
@@ -253,7 +253,7 @@ export class FasterReportExporter {
         return await this.#exportFasterReport(browser, page, exportType);
     }
     async exportAssetList(exportType) {
-        const { browser, page } = await this.#getLoggedInFasterPage();
+        const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
             ReportType: 'S',
             Domain: 'Assets',
@@ -268,7 +268,7 @@ export class FasterReportExporter {
     async exportWorkOrderDetails(minWorkOrderNumber, maxWorkOrderNumber, exportType) {
         const minWorkOrderNumberString = minWorkOrderNumber.toString();
         const maxWorkOrderNumberString = (maxWorkOrderNumber ?? minWorkOrderNumber).toString();
-        const { browser, page } = await this.#getLoggedInFasterPage();
+        const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Maintenance/W300n - WorkOrderDetailsByWONumber', {
             ReportType: 'S',
             Domain: 'Maintenance',
@@ -281,7 +281,7 @@ export class FasterReportExporter {
         return await this.#exportFasterReport(browser, page, exportType);
     }
     async #exportWorkOrderPrint(workOrderNumber, exportType, printButtonSelector) {
-        const { browser, page } = await this.#getLoggedInFasterPage();
+        const { browser, page } = await this._getLoggedInFasterPage();
         try {
             await page.goto(`${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`, {
                 timeout: this.#timeoutMillis
@@ -298,9 +298,7 @@ export class FasterReportExporter {
             }
             await printElement.scrollIntoView();
             await printElement.click();
-            const reportViewerTarget = await browser.waitForTarget((target) => {
-                return target.url().toLowerCase().includes('reportviewer.aspx');
-            }, {
+            const reportViewerTarget = await browser.waitForTarget((target) => target.url().toLowerCase().includes('reportviewer.aspx'), {
                 timeout: this.#timeoutMillis
             });
             const newPage = await reportViewerTarget.asPage();

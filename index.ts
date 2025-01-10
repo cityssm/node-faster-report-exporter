@@ -121,7 +121,11 @@ export class FasterReportExporter {
     this.#timeZone = timezone
   }
 
-  async #getLoggedInFasterPage(): Promise<{
+  /**
+   * Gets a browser and page that are logged into FASTER.
+   * @returns browser and page, be sure to close the browser when done.
+   */
+  async _getLoggedInFasterPage(): Promise<{
     browser: puppeteer.Browser
     page: puppeteer.Page
   }> {
@@ -201,6 +205,7 @@ export class FasterReportExporter {
         if (page.url().toLowerCase().includes('release/releasenotes.aspx')) {
           debug('Release notes page, continuing...')
 
+          // eslint-disable-next-line @cspell/spellchecker
           const continueButtonElement = await page.$('#OKRadButon_input')
 
           if (continueButtonElement !== null) {
@@ -307,7 +312,7 @@ export class FasterReportExporter {
 
     debug(`Report Page Title: ${await page.title()}`)
 
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor, sonarjs/no-misused-promises
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
     const downloadPromise = new Promise<string>(async (resolve) => {
       let downloadStarted = false
 
@@ -436,7 +441,7 @@ export class FasterReportExporter {
     orderNumber: number,
     exportType?: ReportExportType
   ): Promise<string> {
-    const { browser, page } = await this.#getLoggedInFasterPage()
+    const { browser, page } = await this._getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(
       browser,
@@ -461,7 +466,7 @@ export class FasterReportExporter {
    * @returns The path to the exported report.
    */
   async exportInventory(exportType?: ReportExportType): Promise<string> {
-    const { browser, page } = await this.#getLoggedInFasterPage()
+    const { browser, page } = await this._getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(
       browser,
@@ -487,7 +492,7 @@ export class FasterReportExporter {
    * @returns The path to the exported report.
    */
   async exportAssetList(exportType?: ReportExportType): Promise<string> {
-    const { browser, page } = await this.#getLoggedInFasterPage()
+    const { browser, page } = await this._getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(
       browser,
@@ -508,6 +513,13 @@ export class FasterReportExporter {
     return await this.#exportFasterReport(browser, page, exportType)
   }
 
+  /**
+   * Export a Work Order Details by Work Order Number (W300N) report.
+   * @param minWorkOrderNumber - Minimum work order number.
+   * @param maxWorkOrderNumber - Maximum work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
   async exportWorkOrderDetails(
     minWorkOrderNumber: number,
     maxWorkOrderNumber?: number,
@@ -518,7 +530,7 @@ export class FasterReportExporter {
       maxWorkOrderNumber ?? minWorkOrderNumber
     ).toString()
 
-    const { browser, page } = await this.#getLoggedInFasterPage()
+    const { browser, page } = await this._getLoggedInFasterPage()
 
     await this.#navigateToFasterReportPage(
       browser,
@@ -545,7 +557,7 @@ export class FasterReportExporter {
     exportType: ReportExportType,
     printButtonSelector: string
   ): Promise<string> {
-    const { browser, page } = await this.#getLoggedInFasterPage()
+    const { browser, page } = await this._getLoggedInFasterPage()
 
     try {
       await page.goto(
@@ -573,9 +585,7 @@ export class FasterReportExporter {
       await printElement.click()
 
       const reportViewerTarget = await browser.waitForTarget(
-        (target) => {
-          return target.url().toLowerCase().includes('reportviewer.aspx')
-        },
+        (target) => target.url().toLowerCase().includes('reportviewer.aspx'),
         {
           timeout: this.#timeoutMillis
         }
