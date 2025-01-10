@@ -2,22 +2,24 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { URL } from 'node:url';
+import FasterUrlBuilder from '@cityssm/faster-url-builder';
 import puppeteerLaunch from '@cityssm/puppeteer-launch';
+import { secondsToMillis } from '@cityssm/to-millis';
 import Debug from 'debug';
 import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
 import { applyReportFilters } from './puppeteerHelpers.js';
 import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js';
 const debug = Debug('faster-report-exporter:index');
 export class FasterReportExporter {
-    #fasterBaseUrl;
+    fasterUrlBuilder;
     #fasterUserName;
     #fasterPassword;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
-    #timeoutMillis = Math.max(90_000, minimumRecommendedTimeoutSeconds);
+    #timeoutMillis = secondsToMillis(Math.max(90, minimumRecommendedTimeoutSeconds));
     #timeZone = 'Eastern';
-    constructor(fasterTenant, fasterUserName, fasterPassword, options = {}) {
-        this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`;
+    constructor(fasterTenantOrBaseUrl, fasterUserName, fasterPassword, options = {}) {
+        this.fasterUrlBuilder = new FasterUrlBuilder(fasterTenantOrBaseUrl);
         this.#fasterUserName = fasterUserName;
         this.#fasterPassword = fasterPassword;
         if (options.downloadFolderPath !== undefined) {
@@ -62,7 +64,7 @@ export class FasterReportExporter {
             });
             debug('Logging into FASTER...');
             const page = await browser.newPage();
-            await page.goto(this.#fasterBaseUrl, {
+            await page.goto(this.fasterUrlBuilder.baseUrl, {
                 timeout: this.#timeoutMillis
             });
             await page.waitForNetworkIdle({
@@ -120,7 +122,7 @@ export class FasterReportExporter {
     }
     async #navigateToFasterReportPage(browser, page, reportKey, reportParameters, reportFilters) {
         try {
-            const reportUrl = new URL(`${this.#fasterBaseUrl}/Domains/Reports/ReportViewer.aspx`);
+            const reportUrl = new URL(this.fasterUrlBuilder.reportViewerUrl);
             reportUrl.searchParams.set('R', reportKey);
             for (const [parameterKey, parameterValue] of Object.entries(reportParameters)) {
                 reportUrl.searchParams.set(parameterKey, parameterValue);
@@ -283,7 +285,7 @@ export class FasterReportExporter {
     async #exportWorkOrderPrint(workOrderNumber, exportType, printButtonSelector) {
         const { browser, page } = await this._getLoggedInFasterPage();
         try {
-            await page.goto(`${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`, {
+            await page.goto(this.fasterUrlBuilder.workOrderUrl(workOrderNumber), {
                 timeout: this.#timeoutMillis
             });
             await delay();

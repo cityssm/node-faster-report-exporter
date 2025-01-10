@@ -3,7 +3,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { URL } from 'node:url'
 
+import FasterUrlBuilder from '@cityssm/faster-url-builder'
 import puppeteerLaunch, { type puppeteer } from '@cityssm/puppeteer-launch'
+import { secondsToMillis } from '@cityssm/to-millis'
 import Debug from 'debug'
 
 import {
@@ -28,7 +30,8 @@ export interface FasterReportExporterOptions {
 }
 
 export class FasterReportExporter {
-  readonly #fasterBaseUrl: `https://${string}.fasterwebcloud.com/FASTER`
+  readonly fasterUrlBuilder: FasterUrlBuilder
+
   readonly #fasterUserName: string
   readonly #fasterPassword: string
 
@@ -36,25 +39,29 @@ export class FasterReportExporter {
 
   #useHeadlessBrowser = true
 
-  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  #timeoutMillis = Math.max(90_000, minimumRecommendedTimeoutSeconds)
+  #timeoutMillis = secondsToMillis(
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    Math.max(90, minimumRecommendedTimeoutSeconds)
+  )
 
   #timeZone: ReportTimeZone = 'Eastern'
 
   /**
    * Initializes the FasterReportExporter.
-   * @param fasterTenant - The subdomain of the FASTER Web URL before ".fasterwebcloud.com"
+   * @param fasterTenantOrBaseUrl - The subdomain of the FASTER Web URL before ".fasterwebcloud.com"
+   *                                or the full domain and path including "/FASTER"
    * @param fasterUserName - The user name
    * @param fasterPassword - The password
    * @param options - Options
    */
   constructor(
-    fasterTenant: string,
+    fasterTenantOrBaseUrl: string,
     fasterUserName: string,
     fasterPassword: string,
     options: Partial<FasterReportExporterOptions> = {}
   ) {
-    this.#fasterBaseUrl = `https://${fasterTenant}.fasterwebcloud.com/FASTER`
+    this.fasterUrlBuilder = new FasterUrlBuilder(fasterTenantOrBaseUrl)
+
     this.#fasterUserName = fasterUserName
     this.#fasterPassword = fasterPassword
 
@@ -148,7 +155,7 @@ export class FasterReportExporter {
 
       const page = await browser.newPage()
 
-      await page.goto(this.#fasterBaseUrl, {
+      await page.goto(this.fasterUrlBuilder.baseUrl, {
         timeout: this.#timeoutMillis
       })
 
@@ -250,9 +257,7 @@ export class FasterReportExporter {
        * Navigate to report
        */
 
-      const reportUrl = new URL(
-        `${this.#fasterBaseUrl}/Domains/Reports/ReportViewer.aspx`
-      )
+      const reportUrl = new URL(this.fasterUrlBuilder.reportViewerUrl)
 
       reportUrl.searchParams.set('R', reportKey)
 
@@ -560,12 +565,9 @@ export class FasterReportExporter {
     const { browser, page } = await this._getLoggedInFasterPage()
 
     try {
-      await page.goto(
-        `${this.#fasterBaseUrl}/Domains/Maintenance/WorkOrder/WorkOrderMaster.aspx?workOrderID=${workOrderNumber}`,
-        {
-          timeout: this.#timeoutMillis
-        }
-      )
+      await page.goto(this.fasterUrlBuilder.workOrderUrl(workOrderNumber), {
+        timeout: this.#timeoutMillis
+      })
 
       await delay()
 

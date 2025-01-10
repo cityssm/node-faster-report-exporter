@@ -1,3 +1,4 @@
+import FasterUrlBuilder from '@cityssm/faster-url-builder';
 import { type puppeteer } from '@cityssm/puppeteer-launch';
 import type { ReportExportType, ReportTimeZone } from './types.js';
 export interface FasterReportExporterOptions {
@@ -8,7 +9,8 @@ export interface FasterReportExporterOptions {
 }
 export declare class FasterReportExporter {
     #private;
-    constructor(fasterTenant: string, fasterUserName: string, fasterPassword: string, options?: Partial<FasterReportExporterOptions>);
+    readonly fasterUrlBuilder: FasterUrlBuilder;
+    constructor(fasterTenantOrBaseUrl: string, fasterUserName: string, fasterPassword: string, options?: Partial<FasterReportExporterOptions>);
     setDownloadFolderPath(downloadFolderPath: string): void;
     setTimeoutMillis(timeoutMillis: number): void;
     showBrowserWindow(): void;
