@@ -27,12 +27,12 @@
   "homepage": "https://github.com/cityssm/node-faster-report-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^22.9.1",
-    "eslint-config-cityssm": "^16.0.0",
+    "@types/node": "^22.10.5",
+    "eslint-config-cityssm": "^18.3.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
-    "@cityssm/puppeteer-launch": "^3.1.0",
-    "debug": "^4.3.7"
+    "@cityssm/puppeteer-launch": "^3.2.0",
+    "debug": "^4.4.0"
   }
 }
