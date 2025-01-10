@@ -43,7 +43,7 @@ export class FasterReportExporter {
     }
     setTimeoutMillis(timeoutMillis) {
         this.#timeoutMillis = timeoutMillis;
-        if (timeoutMillis < minimumRecommendedTimeoutSeconds * 1000) {
+        if (timeoutMillis < secondsToMillis(minimumRecommendedTimeoutSeconds)) {
             debug(`Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`);
         }
     }

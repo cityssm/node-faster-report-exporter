@@ -104,8 +104,7 @@ export class FasterReportExporter {
   setTimeoutMillis(timeoutMillis: number): void {
     this.#timeoutMillis = timeoutMillis
 
-    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    if (timeoutMillis < minimumRecommendedTimeoutSeconds * 1000) {
+    if (timeoutMillis < secondsToMillis(minimumRecommendedTimeoutSeconds)) {
       debug(
         `Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`
       )
