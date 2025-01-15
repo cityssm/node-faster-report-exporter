@@ -12,7 +12,7 @@ import {
   minimumRecommendedTimeoutSeconds,
   reportExportTypes
 } from './lookups.js'
-import { applyReportFilters } from './puppeteerHelpers.js'
+import { applyReportFilters } from './puppeteer.helpers.js'
 import type {
   ReportExportType,
   ReportParameters,
@@ -316,8 +316,8 @@ export class FasterReportExporter {
 
     debug(`Report Page Title: ${await page.title()}`)
 
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-    const downloadPromise = new Promise<string>(async (resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor, promise/avoid-new
+    return await new Promise<string>(async (resolve) => {
       let downloadStarted = false
 
       try {
@@ -420,7 +420,7 @@ export class FasterReportExporter {
 
         let retries = this.#timeoutMillis / defaultDelayMillis
 
-        // eslint-disable-next-line sonarjs/no-infinite-loop, no-unmodified-loop-condition, @typescript-eslint/no-unnecessary-condition
+        // eslint-disable-next-line no-unmodified-loop-condition, @typescript-eslint/no-unnecessary-condition
         while (downloadStarted && retries > 0) {
           await delay()
           retries--
@@ -431,8 +431,6 @@ export class FasterReportExporter {
         } catch {}
       }
     })
-
-    return await Promise.resolve(downloadPromise)
   }
 
   /**

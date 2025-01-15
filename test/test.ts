@@ -5,8 +5,10 @@ import assert from 'node:assert'
 import fs from 'node:fs'
 import { after, describe, it } from 'node:test'
 
+import { minutesToMillis } from '@cityssm/to-millis'
 import Debug from 'debug'
 
+import { DEBUG_ENABLE_NAMESPACES } from '../debug.config.js'
 import { FasterReportExporter } from '../index.js'
 
 import {
@@ -19,6 +21,8 @@ import {
 } from './config.js'
 
 const doCleanup = true
+
+Debug.enable(DEBUG_ENABLE_NAMESPACES)
 
 const debug = Debug('faster-report-exporter:test')
 
@@ -99,10 +103,14 @@ await describe('node-faster-report-exporter', async () => {
 
   await it(
     'Exports work order details',
-    { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    { timeout: minutesToMillis(5) }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
       try {
-        const reportPath = await reportExporter.exportWorkOrderDetails(1, 10, 'PDF')
+        const reportPath = await reportExporter.exportWorkOrderDetails(
+          1,
+          10,
+          'PDF'
+        )
 
         assert(fs.existsSync(reportPath))
 

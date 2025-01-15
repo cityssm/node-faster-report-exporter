@@ -1,4 +1,13 @@
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 import { delay, longDelayMillis } from './utilities.js';
+/**
+ * Populates the report filters on a Report Viewer page.
+ * @param page - FASTER Web Report Viewer page
+ * @param reportFilters - Filters applied to the report.
+ * @param options - Options.
+ * @param options.timeoutMillis - The regular pause interval.
+ */
 export async function applyReportFilters(page, reportFilters, options) {
     await page.waitForSelector('label');
     const labelElements = await page.$$('label');
@@ -8,6 +17,7 @@ export async function applyReportFilters(page, reportFilters, options) {
         if (labelText === null) {
             continue;
         }
+        // eslint-disable-next-line security/detect-object-injection
         labelTextToInputId[labelText] =
             (await labelElement.evaluate((element) => element.getAttribute('for'))) ?? '';
     }

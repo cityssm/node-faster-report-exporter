@@ -1,12 +1,15 @@
 {
   "name": "@cityssm/faster-report-exporter",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "description": "On demand exports of selected reports from the FASTER Web Fleet Management System.",
-  "exports": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./debug": "./debug.config.js"
+  },
   "scripts": {
-    "test": "cross-env NODE_ENV=dev DEBUG=faster-report-exporter:* node --test",
-    "coverage": "cross-env NODE_ENV=dev DEBUG=faster-report-exporter:* c8 --reporter=lcov --reporter=text --reporter=text-summary node --test"
+    "test": "node --test",
+    "coverage": "c8 --reporter=lcov --reporter=text --reporter=text-summary node --test"
   },
   "repository": {
     "type": "git",
@@ -27,13 +30,13 @@
   "homepage": "https://github.com/cityssm/node-faster-report-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^22.10.5",
+    "@types/node": "^22.10.6",
     "eslint-config-cityssm": "^18.3.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
     "@cityssm/faster-url-builder": "^1.0.1",
-    "@cityssm/puppeteer-launch": "^3.2.0",
+    "@cityssm/puppeteer-launch": "^4.0.0",
     "@cityssm/to-millis": "^1.0.0",
     "debug": "^4.4.0"
   }

@@ -51,6 +51,25 @@ const customerReport =
   await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber)
 ```
 
+### Enabling Debug Output
+
+This package uses the [debug](https://www.npmjs.com/package/debug) package
+for debugging output.
+For convenience, the debug namespace used by this pacakge,
+and full namespace enable string are exported.
+
+Debug output can be enabled programmatically, as shown in the example below.
+
+```javascript
+import { DEBUG_ENABLE_NAMESPACES } from '@cityssm/faster-report-exporter/debug'
+import Debug from 'debug'
+
+Debug.enable(DEBUG_ENABLE_NAMESPACES)
+```
+
+Debugging output can also be enabled using environment variables,
+decribed in the debug package documentation.
+
 ## More Code for FASTER Web
 
 [FASTER Web Helper](https://github.com/cityssm/faster-web-helper)<br />

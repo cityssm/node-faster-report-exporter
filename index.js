@@ -7,7 +7,7 @@ import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import { secondsToMillis } from '@cityssm/to-millis';
 import Debug from 'debug';
 import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
-import { applyReportFilters } from './puppeteerHelpers.js';
+import { applyReportFilters } from './puppeteer.helpers.js';
 import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js';
 const debug = Debug('faster-report-exporter:index');
 export class FasterReportExporter {
@@ -16,8 +16,18 @@ export class FasterReportExporter {
     #fasterPassword;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
-    #timeoutMillis = secondsToMillis(Math.max(90, minimumRecommendedTimeoutSeconds));
+    #timeoutMillis = secondsToMillis(
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    Math.max(90, minimumRecommendedTimeoutSeconds));
     #timeZone = 'Eastern';
+    /**
+     * Initializes the FasterReportExporter.
+     * @param fasterTenantOrBaseUrl - The subdomain of the FASTER Web URL before ".fasterwebcloud.com"
+     *                                or the full domain and path including "/FASTER"
+     * @param fasterUserName - The user name
+     * @param fasterPassword - The password
+     * @param options - Options
+     */
     constructor(fasterTenantOrBaseUrl, fasterUserName, fasterPassword, options = {}) {
         this.fasterUrlBuilder = new FasterUrlBuilder(fasterTenantOrBaseUrl);
         this.#fasterUserName = fasterUserName;
@@ -35,25 +45,47 @@ export class FasterReportExporter {
             this.#timeZone = options.timeZone;
         }
     }
+    /**
+     * Sets the folder where downloaded reports are saved.
+     * @param downloadFolderPath - The folder where downloaded reports are saved.
+     */
     setDownloadFolderPath(downloadFolderPath) {
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(downloadFolderPath)) {
             throw new Error(`Download folder path does not exist: ${downloadFolderPath}`);
         }
         this.#downloadFolderPath = downloadFolderPath;
     }
+    /**
+     * Changes the timeout for loading the browser and navigating between pages.
+     * @param timeoutMillis - Number of milliseconds.
+     */
     setTimeoutMillis(timeoutMillis) {
         this.#timeoutMillis = timeoutMillis;
         if (timeoutMillis < secondsToMillis(minimumRecommendedTimeoutSeconds)) {
             debug(`Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`);
         }
     }
+    /**
+     * Switches off headless mode, making the browser window visible.
+     * Useful for debugging.
+     */
     showBrowserWindow() {
         this.#useHeadlessBrowser = false;
     }
+    /**
+     * Changes the time zone parameter used in reports.
+     * @param timezone - The preferred report time zone.
+     */
     setTimeZone(timezone) {
         this.#timeZone = timezone;
     }
+    /**
+     * Gets a browser and page that are logged into FASTER.
+     * @returns browser and page, be sure to close the browser when done.
+     */
     async _getLoggedInFasterPage() {
+        // eslint-disable-next-line @typescript-eslint/init-declarations
         let browser;
         try {
             browser = await puppeteerLaunch({
@@ -62,6 +94,9 @@ export class FasterReportExporter {
                 headless: this.#useHeadlessBrowser,
                 timeout: this.#timeoutMillis
             });
+            /*
+             * Load Faster
+             */
             debug('Logging into FASTER...');
             const page = await browser.newPage();
             await page.goto(this.fasterUrlBuilder.baseUrl, {
@@ -70,6 +105,9 @@ export class FasterReportExporter {
             await page.waitForNetworkIdle({
                 timeout: this.#timeoutMillis
             });
+            /*
+             * Log in if need be
+             */
             const loginFormElement = await page.$('#form_Signin');
             if (loginFormElement !== null) {
                 debug('Filling out login form...');
@@ -95,6 +133,7 @@ export class FasterReportExporter {
                 });
                 if (page.url().toLowerCase().includes('release/releasenotes.aspx')) {
                     debug('Release notes page, continuing...');
+                    // eslint-disable-next-line @cspell/spellchecker
                     const continueButtonElement = await page.$('#OKRadButon_input');
                     if (continueButtonElement !== null) {
                         await continueButtonElement.scrollIntoView();
@@ -117,11 +156,16 @@ export class FasterReportExporter {
                 await browser?.close();
             }
             catch { }
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/max-params
     async #navigateToFasterReportPage(browser, page, reportKey, reportParameters, reportFilters) {
         try {
+            /*
+             * Navigate to report
+             */
             const reportUrl = new URL(this.fasterUrlBuilder.reportViewerUrl);
             reportUrl.searchParams.set('R', reportKey);
             for (const [parameterKey, parameterValue] of Object.entries(reportParameters)) {
@@ -149,18 +193,30 @@ export class FasterReportExporter {
                 await browser.close();
             }
             catch { }
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
+    /**
+     * Exports a FASTER report to a file.
+     * @param browser - Puppeteer browser
+     * @param page - Puppeteer page on a report page
+     * @param exportType - Output file type
+     * @returns - Path to the exported file.
+     */
     async #exportFasterReport(browser, page, exportType = 'PDF') {
         await page.bringToFront();
         await page.waitForNetworkIdle({
             timeout: this.#timeoutMillis
         });
         debug(`Report Page Title: ${await page.title()}`);
-        const downloadPromise = new Promise(async (resolve) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor, promise/avoid-new
+        return await new Promise(async (resolve) => {
             let downloadStarted = false;
             try {
+                /*
+                 * Catch the download
+                 */
                 const cdpSession = await browser.target().createCDPSession();
                 await cdpSession.send('Browser.setDownloadBehavior', {
                     behavior: 'allowAndName',
@@ -171,7 +227,9 @@ export class FasterReportExporter {
                     if (event.state === 'completed') {
                         debug('Download complete.');
                         const downloadedFilePath = path.join(this.#downloadFolderPath, event.guid);
+                        // eslint-disable-next-line security/detect-object-injection
                         const newFilePath = `${downloadedFilePath}.${reportExportTypes[exportType]}`;
+                        // eslint-disable-next-line security/detect-non-literal-fs-filename
                         fs.rename(downloadedFilePath, newFilePath, (error) => {
                             if (error === null) {
                                 debug(`File: ${newFilePath}`);
@@ -189,6 +247,9 @@ export class FasterReportExporter {
                         throw new Error('Download cancelled.');
                     }
                 });
+                /*
+                 * Print to PDF
+                 */
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
@@ -217,6 +278,7 @@ export class FasterReportExporter {
                     timeout: this.#timeoutMillis
                 });
                 let retries = this.#timeoutMillis / defaultDelayMillis;
+                // eslint-disable-next-line no-unmodified-loop-condition, @typescript-eslint/no-unnecessary-condition
                 while (downloadStarted && retries > 0) {
                     await delay();
                     retries--;
@@ -229,8 +291,13 @@ export class FasterReportExporter {
                 catch { }
             }
         });
-        return await Promise.resolve(downloadPromise);
     }
+    /**
+     * Exports a Part Order Print (W299) report for a given order number.
+     * @param orderNumber - The order number.
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportPartOrderPrint(orderNumber, exportType) {
         const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Part Order Print/W299 - OrderPrint', {
@@ -242,6 +309,11 @@ export class FasterReportExporter {
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
+    /**
+     * Exports an Inventory Report (W200).
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportInventory(exportType) {
         const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Inventory/W200 - Inventory Report', {
@@ -254,6 +326,11 @@ export class FasterReportExporter {
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
+    /**
+     * Export an Asset Master List (W114) report.
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportAssetList(exportType) {
         const { browser, page } = await this._getLoggedInFasterPage();
         await this.#navigateToFasterReportPage(browser, page, '/Assets/W114 - Asset Master List', {
@@ -267,11 +344,20 @@ export class FasterReportExporter {
         });
         return await this.#exportFasterReport(browser, page, exportType);
     }
+    /**
+     * Export a Work Order Details by Work Order Number (W300N) report.
+     * @param minWorkOrderNumber - Minimum work order number.
+     * @param maxWorkOrderNumber - Maximum work order number.
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportWorkOrderDetails(minWorkOrderNumber, maxWorkOrderNumber, exportType) {
         const minWorkOrderNumberString = minWorkOrderNumber.toString();
         const maxWorkOrderNumberString = (maxWorkOrderNumber ?? minWorkOrderNumber).toString();
         const { browser, page } = await this._getLoggedInFasterPage();
-        await this.#navigateToFasterReportPage(browser, page, '/Maintenance/W300n - WorkOrderDetailsByWONumber', {
+        await this.#navigateToFasterReportPage(browser, page, 
+        // eslint-disable-next-line no-secrets/no-secrets
+        '/Maintenance/W300n - WorkOrderDetailsByWONumber', {
             ReportType: 'S',
             Domain: 'Maintenance',
             Parent: 'Reports'
@@ -317,13 +403,30 @@ export class FasterReportExporter {
                 await browser.close();
             }
             catch { }
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
+    /**
+     * Exports the Customer Print (W398) for a given work order.
+     * @param workOrderNumber - The work order number.
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportWorkOrderCustomerPrint(workOrderNumber, exportType = 'PDF') {
-        return await this.#exportWorkOrderPrint(workOrderNumber, exportType, '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_CustomerPrintLinkButton');
+        return await this.#exportWorkOrderPrint(workOrderNumber, exportType, 
+        // eslint-disable-next-line no-secrets/no-secrets
+        '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_CustomerPrintLinkButton');
     }
+    /**
+     * Exports the Technician Print (W399) for a given work order.
+     * @param workOrderNumber - The work order number.
+     * @param exportType - The export type.
+     * @returns The path to the exported report.
+     */
     async exportWorkOrderTechnicianPrint(workOrderNumber, exportType = 'PDF') {
-        return await this.#exportWorkOrderPrint(workOrderNumber, exportType, '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_WorkOrderPrintLinkButton');
+        return await this.#exportWorkOrderPrint(workOrderNumber, exportType, 
+        // eslint-disable-next-line no-secrets/no-secrets
+        '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_WorkOrderPrintLinkButton');
     }
 }

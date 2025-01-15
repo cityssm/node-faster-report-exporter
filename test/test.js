@@ -1,10 +1,15 @@
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
+/* eslint-disable security/detect-non-literal-fs-filename */
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { after, describe, it } from 'node:test';
+import { minutesToMillis } from '@cityssm/to-millis';
 import Debug from 'debug';
+import { DEBUG_ENABLE_NAMESPACES } from '../debug.config.js';
 import { FasterReportExporter } from '../index.js';
 import { fasterPassword, fasterTenant, fasterUserName, partOrderNumber, timeZone, workOrderNumber } from './config.js';
 const doCleanup = true;
+Debug.enable(DEBUG_ENABLE_NAMESPACES);
 const debug = Debug('faster-report-exporter:test');
 await describe('node-faster-report-exporter', async () => {
     const filesToPurgeOnExit = [];
@@ -14,6 +19,7 @@ await describe('node-faster-report-exporter', async () => {
         timeZone
     });
     after(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (doCleanup) {
             for (const fileToPurge of filesToPurgeOnExit) {
                 if (fileToPurge !== '' && fs.existsSync(fileToPurge)) {
@@ -23,7 +29,8 @@ await describe('node-faster-report-exporter', async () => {
             }
         }
     });
-    await it('Exports asset list', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+    await it('Exports asset list', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    async () => {
         try {
             const reportPath = await reportExporter.exportAssetList('PDF');
             assert(fs.existsSync(reportPath));
@@ -34,7 +41,8 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+    await it('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    async () => {
         try {
             const reportPath = await reportExporter.exportInventory('PDF');
             assert(fs.existsSync(reportPath));
@@ -55,7 +63,8 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it('Exports work order details', { timeout: 5 * 60 * 60 * 1000 }, async () => {
+    await it('Exports work order details', { timeout: minutesToMillis(5) }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderDetails(1, 10, 'PDF');
             assert(fs.existsSync(reportPath));

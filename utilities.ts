@@ -1,3 +1,7 @@
+import { promisify } from 'node:util'
+
+const setTimeoutPromise = promisify(setTimeout)
+
 export const defaultDelayMillis = 500
 export const longDelayMillis = 1500
 
@@ -6,7 +10,5 @@ export const longDelayMillis = 1500
  * @param delayMillis - Time to wait in milliseconds
  */
 export async function delay(delayMillis?: number): Promise<void> {
-  await new Promise((resolve) =>
-    setTimeout(resolve, delayMillis ?? defaultDelayMillis)
-  )
+  await setTimeoutPromise(delayMillis ?? defaultDelayMillis)
 }
