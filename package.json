@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@cityssm/faster-url-builder": "^1.0.1",
-    "@cityssm/puppeteer-launch": "^3.2.0",
+    "@cityssm/puppeteer-launch": "^4.0.0",
     "@cityssm/to-millis": "^1.0.0",
     "debug": "^4.4.0"
   }
