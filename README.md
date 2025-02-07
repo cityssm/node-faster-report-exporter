@@ -49,6 +49,25 @@ const technicianReport =
 
 const customerReport =
   await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber)
+
+/*
+ * Message Logger
+ */
+
+const messageLoggerReport = await reportExporter.exportMessageLogger(
+  startDate,
+  endDate
+)
+
+/*
+ * Scheduled Reports
+ */
+
+const scheduledReport = await reportExporter.exportScheduledReport(
+  scheduleName,
+  startDate,
+  endDate
+)
 ```
 
 ### Enabling Debug Output
@@ -72,13 +91,7 @@ decribed in the debug package documentation.
 
 ## More Code for FASTER Web
 
-[FASTER Web Helper](https://github.com/cityssm/faster-web-helper)<br />
-A service to support integrations with the FASTER Web fleet management system.
-
 [FASTER Web Report Parser](https://github.com/cityssm/node-faster-report-parser)<br />
 Parses select Excel and CSV reports from FASTER Web into usable data objects.
 
-[Userscripts for FASTER Web](https://cityssm.github.io/userscripts/#userscripts-for-faster-web)<br />
-Fixes some of the common irks when using FASTER Web.
-Includes userscripts to enforce field validation, correct varying header heights,
-and offer autocomplete.
+[Even more open source projects related to FASTER Web](https://github.com/cityssm/faster-web-projects)
