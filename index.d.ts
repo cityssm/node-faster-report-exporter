@@ -88,4 +88,22 @@ export declare class FasterReportExporter {
      * @returns The path to the exported report.
      */
     exportWorkOrderTechnicianPrint(workOrderNumber: number, exportType?: ReportExportType): Promise<string>;
+    /**
+     * Exports the Message Logger (W603) report.
+     * @param startDate - The start date
+     * @param endDate - The end date
+     * @param exportType - The export type
+     * @returns The path to the exported report.
+     */
+    exportMessageLogger(startDate?: Date, endDate?: Date, exportType?: ReportExportType): Promise<string>;
+    /**
+     * Exports a scheduled report by name.
+     * Helpful for exporting reports with complex parameters.
+     * @param scheduleName - Schedule name
+     * @param startDate - The start date
+     * @param endDate - The end date
+     * @param exportType - The export type
+     * @returns The path to the exported report.
+     */
+    exportScheduledReport(scheduleName: string, startDate?: Date, endDate?: Date, exportType?: ReportExportType): Promise<string>;
 }

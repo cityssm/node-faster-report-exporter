@@ -1,3 +1,5 @@
+// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
+/* eslint-disable max-lines */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -5,6 +7,7 @@ import { URL } from 'node:url';
 import FasterUrlBuilder from '@cityssm/faster-url-builder';
 import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import { secondsToMillis } from '@cityssm/to-millis';
+import { dateToString } from '@cityssm/utils-datetime';
 import Debug from 'debug';
 import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
 import { applyReportFilters } from './puppeteer.helpers.js';
@@ -428,5 +431,93 @@ export class FasterReportExporter {
         return await this.#exportWorkOrderPrint(workOrderNumber, exportType, 
         // eslint-disable-next-line no-secrets/no-secrets
         '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_WorkOrderPrintLinkButton');
+    }
+    /**
+     * Exports the Message Logger (W603) report.
+     * @param startDate - The start date
+     * @param endDate - The end date
+     * @param exportType - The export type
+     * @returns The path to the exported report.
+     */
+    async exportMessageLogger(startDate = new Date(), endDate = new Date(), exportType) {
+        const { browser, page } = await this._getLoggedInFasterPage();
+        await this.#navigateToFasterReportPage(browser, page, '/Setup/W603 - Message Logger', {
+            ReportType: 'S',
+            Domain: 'Setup',
+            Parent: 'Reports'
+        }, {
+            'Time Zone': this.#timeZone,
+            'Start Date': dateToString(startDate),
+            'End Date': dateToString(endDate)
+        });
+        return await this.#exportFasterReport(browser, page, exportType);
+    }
+    /**
+     * Exports a scheduled report by name.
+     * Helpful for exporting reports with complex parameters.
+     * @param scheduleName - Schedule name
+     * @param startDate - The start date
+     * @param endDate - The end date
+     * @param exportType - The export type
+     * @returns The path to the exported report.
+     */
+    async exportScheduledReport(scheduleName, startDate = new Date(), endDate = new Date(), exportType) {
+        let { browser, page } = await this._getLoggedInFasterPage();
+        try {
+            await page.goto(this.fasterUrlBuilder.scheduledReportsUrl, {
+                timeout: this.#timeoutMillis
+            });
+            await page.waitForNetworkIdle({
+                timeout: this.#timeoutMillis
+            });
+            // Find the report row
+            const scheduledReportsTableRowElements = await page.$$(
+            // eslint-disable-next-line no-secrets/no-secrets
+            '#ctl00_ContentPlaceHolder_Content_ScheduleRadDock_C_ScheduleRadGrid_ctl00 tbody tr');
+            for (const scheduledReportsTableRowElement of scheduledReportsTableRowElements) {
+                const reportNameElement = await scheduledReportsTableRowElement.$('td:nth-child(2) div span');
+                if (reportNameElement === null) {
+                    continue;
+                }
+                const reportNameText = await reportNameElement.evaluate((cell) => cell.textContent?.trim());
+                if (reportNameText === scheduleName) {
+                    debug(`Scheduled report found: ${scheduleName}`);
+                    const actionLinkElements = await scheduledReportsTableRowElement.$$('td:nth-child(1) a');
+                    for (const actionLinkElement of actionLinkElements) {
+                        const actionLinkText = await actionLinkElement.evaluate((cell) => cell.textContent);
+                        if (actionLinkText === 'Parameter') {
+                            debug(`Opening report: ${scheduleName}`);
+                            await actionLinkElement.click();
+                            await delay();
+                            await page.waitForNetworkIdle({
+                                timeout: this.#timeoutMillis
+                            });
+                            const browserPages = await browser.pages();
+                            page = browserPages.at(-1);
+                            await page.bringToFront();
+                            await page.waitForNetworkIdle({
+                                timeout: this.#timeoutMillis
+                            });
+                            await applyReportFilters(page, {
+                                'Start Date': dateToString(startDate),
+                                'End Date': dateToString(endDate)
+                            }, {
+                                timeoutMillis: this.#timeoutMillis
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        catch (error) {
+            try {
+                await browser.close();
+            }
+            catch { }
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
+            throw error;
+        }
+        return await this.#exportFasterReport(browser, page, exportType);
     }
 }
