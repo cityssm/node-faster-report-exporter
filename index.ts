@@ -760,6 +760,8 @@ export class FasterReportExporter {
 
               await page.bringToFront()
 
+              await delay()
+
               await page.waitForNetworkIdle({
                 timeout: this.#timeoutMillis
               })

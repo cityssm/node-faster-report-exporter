@@ -495,6 +495,7 @@ export class FasterReportExporter {
                             const browserPages = await browser.pages();
                             page = browserPages.at(-1);
                             await page.bringToFront();
+                            await delay();
                             await page.waitForNetworkIdle({
                                 timeout: this.#timeoutMillis
                             });
