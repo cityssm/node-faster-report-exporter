@@ -30,11 +30,12 @@
   "homepage": "https://github.com/cityssm/node-faster-report-exporter#readme",
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^22.13.1",
-    "eslint-config-cityssm": "^19.0.0",
+    "@types/node": "^22.13.4",
+    "eslint-config-cityssm": "^20.0.0",
     "prettier-config-cityssm": "^1.0.0"
   },
   "dependencies": {
+    "@cityssm/faster-constants": "^0.2.0",
     "@cityssm/faster-url-builder": "^1.1.0",
     "@cityssm/puppeteer-launch": "^4.0.0",
     "@cityssm/to-millis": "^1.0.0",

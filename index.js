@@ -9,10 +9,11 @@ import puppeteerLaunch from '@cityssm/puppeteer-launch';
 import { secondsToMillis } from '@cityssm/to-millis';
 import { dateToString } from '@cityssm/utils-datetime';
 import Debug from 'debug';
+import { DEBUG_NAMESPACE } from './debug.config.js';
 import { minimumRecommendedTimeoutSeconds, reportExportTypes } from './lookups.js';
 import { applyReportFilters } from './puppeteer.helpers.js';
 import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js';
-const debug = Debug('faster-report-exporter:index');
+const debug = Debug(`${DEBUG_NAMESPACE}:index`);
 export class FasterReportExporter {
     fasterUrlBuilder;
     #fasterUserName;

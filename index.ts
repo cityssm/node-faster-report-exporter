@@ -12,6 +12,7 @@ import { secondsToMillis } from '@cityssm/to-millis'
 import { dateToString } from '@cityssm/utils-datetime'
 import Debug from 'debug'
 
+import { DEBUG_NAMESPACE } from './debug.config.js'
 import {
   minimumRecommendedTimeoutSeconds,
   reportExportTypes
@@ -24,7 +25,7 @@ import type {
 } from './types.js'
 import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js'
 
-const debug = Debug('faster-report-exporter:index')
+const debug = Debug(`${DEBUG_NAMESPACE}:index`)
 
 export interface FasterReportExporterOptions {
   downloadFolderPath: string
