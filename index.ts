@@ -30,15 +30,21 @@ const debug = Debug(`${DEBUG_NAMESPACE}:index`)
 export interface FasterReportExporterOptions {
   downloadFolderPath: string
   timeoutMillis: number
-  showBrowserWindow: boolean
   timeZone: ReportTimeZone
+
+  /**
+   * Show the browser window.
+   * Useful for debugging.
+   * @default false
+   */
+  showBrowserWindow: boolean
 }
 
 export class FasterReportExporter {
   readonly fasterUrlBuilder: FasterUrlBuilder
 
-  readonly #fasterUserName: string
   readonly #fasterPassword: string
+  readonly #fasterUserName: string
 
   #downloadFolderPath = os.tmpdir()
 
@@ -243,7 +249,6 @@ export class FasterReportExporter {
         await browser?.close()
       } catch {}
 
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw error
     }
   }
@@ -296,7 +301,6 @@ export class FasterReportExporter {
         await browser.close()
       } catch {}
 
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw error
     }
   }
@@ -613,7 +617,6 @@ export class FasterReportExporter {
         await browser.close()
       } catch {}
 
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw error
     }
   }
@@ -788,7 +791,6 @@ export class FasterReportExporter {
         await browser.close()
       } catch {}
 
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw error
     }
 

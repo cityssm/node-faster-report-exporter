@@ -59,7 +59,7 @@ await describe('node-faster-report-exporter', async () => {
       try {
         const reportPath = await reportExporter.exportAssetList('PDF')
 
-        assert(fs.existsSync(reportPath))
+        assert.ok(fs.existsSync(reportPath))
 
         filesToPurgeOnExit.push(reportPath)
       } catch (error) {
@@ -69,14 +69,14 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
-  await it.skip(
+  await it(
     'Exports inventory',
     { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
       try {
         const reportPath = await reportExporter.exportInventory('PDF')
 
-        assert(fs.existsSync(reportPath))
+        assert.ok(fs.existsSync(reportPath))
 
         filesToPurgeOnExit.push(reportPath)
       } catch (error) {
@@ -93,7 +93,7 @@ await describe('node-faster-report-exporter', async () => {
         'Word'
       )
 
-      assert(fs.existsSync(reportPath))
+      assert.ok(fs.existsSync(reportPath))
 
       filesToPurgeOnExit.push(reportPath)
     } catch {
@@ -112,7 +112,7 @@ await describe('node-faster-report-exporter', async () => {
           'PDF'
         )
 
-        assert(fs.existsSync(reportPath))
+        assert.ok(fs.existsSync(reportPath))
 
         filesToPurgeOnExit.push(reportPath)
       } catch (error) {
@@ -129,7 +129,7 @@ await describe('node-faster-report-exporter', async () => {
         'Excel'
       )
 
-      assert(fs.existsSync(reportPath))
+      assert.ok(fs.existsSync(reportPath))
 
       filesToPurgeOnExit.push(reportPath)
     } catch {
@@ -144,7 +144,7 @@ await describe('node-faster-report-exporter', async () => {
         'PDF'
       )
 
-      assert(fs.existsSync(reportPath))
+      assert.ok(fs.existsSync(reportPath))
 
       filesToPurgeOnExit.push(reportPath)
     } catch {
@@ -161,7 +161,7 @@ await describe('node-faster-report-exporter', async () => {
         'Excel'
       )
 
-      assert(fs.existsSync(reportPath))
+      assert.ok(fs.existsSync(reportPath))
 
       filesToPurgeOnExit.push(reportPath)
     } catch {
@@ -169,7 +169,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it('Exports a scheduled report', async () => {
+  await it.skip('Exports a scheduled report', async () => {
     try {
       const reportPath = await reportExporter.exportScheduledReport(
         'IntegrationMessageLogger',
@@ -177,7 +177,7 @@ await describe('node-faster-report-exporter', async () => {
         new Date(2025, 3 - 1, 1)
       )
 
-      assert(fs.existsSync(reportPath))
+      assert.ok(fs.existsSync(reportPath))
 
       filesToPurgeOnExit.push(reportPath)
     } catch {

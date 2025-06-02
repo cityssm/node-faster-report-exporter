@@ -16,8 +16,8 @@ import { defaultDelayMillis, delay, longDelayMillis } from './utilities.js';
 const debug = Debug(`${DEBUG_NAMESPACE}:index`);
 export class FasterReportExporter {
     fasterUrlBuilder;
-    #fasterUserName;
     #fasterPassword;
+    #fasterUserName;
     #downloadFolderPath = os.tmpdir();
     #useHeadlessBrowser = true;
     #timeoutMillis = secondsToMillis(
@@ -160,7 +160,6 @@ export class FasterReportExporter {
                 await browser?.close();
             }
             catch { }
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
@@ -197,7 +196,6 @@ export class FasterReportExporter {
                 await browser.close();
             }
             catch { }
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
@@ -407,7 +405,6 @@ export class FasterReportExporter {
                 await browser.close();
             }
             catch { }
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
     }
@@ -517,7 +514,6 @@ export class FasterReportExporter {
                 await browser.close();
             }
             catch { }
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw error;
         }
         return await this.#exportFasterReport(browser, page, exportType);

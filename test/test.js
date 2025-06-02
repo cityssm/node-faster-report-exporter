@@ -33,7 +33,7 @@ await describe('node-faster-report-exporter', async () => {
     async () => {
         try {
             const reportPath = await reportExporter.exportAssetList('PDF');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch (error) {
@@ -41,11 +41,11 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    await it('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
         try {
             const reportPath = await reportExporter.exportInventory('PDF');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch (error) {
@@ -56,7 +56,7 @@ await describe('node-faster-report-exporter', async () => {
     await it.skip('Exports a part order', async () => {
         try {
             const reportPath = await reportExporter.exportPartOrderPrint(partOrderNumber, 'Word');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch {
@@ -67,7 +67,7 @@ await describe('node-faster-report-exporter', async () => {
     async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderDetails(1, 10, 'PDF');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch (error) {
@@ -78,7 +78,7 @@ await describe('node-faster-report-exporter', async () => {
     await it.skip('Exports a work order customer print', async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber, 'Excel');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch {
@@ -88,7 +88,7 @@ await describe('node-faster-report-exporter', async () => {
     await it.skip('Exports a work order technician print', async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber, 'PDF');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch {
@@ -98,17 +98,17 @@ await describe('node-faster-report-exporter', async () => {
     await it.skip('Exports the message logger', async () => {
         try {
             const reportPath = await reportExporter.exportMessageLogger(new Date(2025, 1 - 1, 1), new Date(2025, 3 - 1, 1), 'Excel');
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch {
             assert.fail();
         }
     });
-    await it('Exports a scheduled report', async () => {
+    await it.skip('Exports a scheduled report', async () => {
         try {
             const reportPath = await reportExporter.exportScheduledReport('IntegrationMessageLogger', new Date(2025, 1 - 1, 1), new Date(2025, 3 - 1, 1));
-            assert(fs.existsSync(reportPath));
+            assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }
         catch {

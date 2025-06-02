@@ -4,8 +4,13 @@ import type { ReportExportType, ReportTimeZone } from './types.js';
 export interface FasterReportExporterOptions {
     downloadFolderPath: string;
     timeoutMillis: number;
-    showBrowserWindow: boolean;
     timeZone: ReportTimeZone;
+    /**
+     * Show the browser window.
+     * Useful for debugging.
+     * @default false
+     */
+    showBrowserWindow: boolean;
 }
 export declare class FasterReportExporter {
     #private;
