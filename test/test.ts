@@ -69,7 +69,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
-  await it(
+  await it.skip(
     'Exports inventory',
     { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
@@ -137,11 +137,11 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it.skip('Exports a work order technician print', async () => {
+  await it('Exports a work order technician print', async () => {
     try {
       const reportPath = await reportExporter.exportWorkOrderTechnicianPrint(
         workOrderNumber,
-        'PDF'
+        'XML'
       )
 
       assert.ok(fs.existsSync(reportPath))

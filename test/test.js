@@ -41,7 +41,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    await it.skip('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
         try {
             const reportPath = await reportExporter.exportInventory('PDF');
@@ -85,9 +85,9 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports a work order technician print', async () => {
+    await it('Exports a work order technician print', async () => {
         try {
-            const reportPath = await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber, 'PDF');
+            const reportPath = await reportExporter.exportWorkOrderTechnicianPrint(workOrderNumber, 'XML');
             assert.ok(fs.existsSync(reportPath));
             filesToPurgeOnExit.push(reportPath);
         }

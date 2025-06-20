@@ -55,7 +55,7 @@ export async function applyReportFilters(
 
     const inputElement = (await page.waitForSelector(`#${inputId}`, {
       timeout: options.timeoutMillis
-    })) as puppeteer.ElementHandle<HTMLSelectElement | HTMLInputElement> | null
+    })) as puppeteer.ElementHandle<HTMLInputElement | HTMLSelectElement> | null
 
     if (inputElement === null) {
       throw new Error(`No element found with id: ${inputId}`)
