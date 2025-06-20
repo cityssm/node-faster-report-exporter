@@ -1,4 +1,6 @@
 .github/
+.sonarlint/
+.vscode/
 coverage/
 test/
 
