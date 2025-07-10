@@ -1,4 +1,4 @@
-export const minimumRecommendedTimeoutSeconds = 60;
+export const minimumRecommendedTimeoutSeconds = 90;
 export const reportExportTypes = {
     CSV: 'csv',
     Excel: 'xlsx',

@@ -52,7 +52,7 @@ export class FasterReportExporter {
 
   #timeoutMillis = secondsToMillis(
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    Math.max(90, minimumRecommendedTimeoutSeconds)
+    Math.max(120, minimumRecommendedTimeoutSeconds)
   )
 
   #timeZone: ReportTimeZone = 'Eastern'
@@ -732,8 +732,8 @@ export class FasterReportExporter {
           continue
         }
 
-        const reportNameText = await reportNameElement.evaluate(
-          (cell) => cell.textContent?.trim()
+        const reportNameText = await reportNameElement.evaluate((cell) =>
+          cell.textContent?.trim()
         )
 
         if (reportNameText === scheduleName) {
@@ -759,7 +759,7 @@ export class FasterReportExporter {
               })
 
               const browserPages = await browser.pages()
-            
+
               page = browserPages.at(-1) as puppeteer.Page
 
               await page.bringToFront()

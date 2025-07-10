@@ -22,7 +22,7 @@ export class FasterReportExporter {
     #useHeadlessBrowser = true;
     #timeoutMillis = secondsToMillis(
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    Math.max(90, minimumRecommendedTimeoutSeconds));
+    Math.max(120, minimumRecommendedTimeoutSeconds));
     #timeZone = 'Eastern';
     /**
      * Initializes the FasterReportExporter.
