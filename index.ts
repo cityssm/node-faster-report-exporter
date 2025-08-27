@@ -373,22 +373,34 @@ export class FasterReportExporter {
         })
 
         /*
-         * Print to PDF
+         * Ensure the user has permission.
+         * (or that the report exists)
          */
 
         await page.waitForNetworkIdle({
           timeout: this.#timeoutMillis
         })
 
-        const reportErrorTextExists = await page.evaluate(() =>
-          document.body.textContent.includes(
-            'You do not have permissions to access the reports.'
-          )
-        )
+        const bodyHandle = await page.$('body')
+
+        const reportErrorTextExists =
+          (await page.evaluate(
+            (body) =>
+              body?.textContent.includes(
+                'You do not have permissions to access the reports.'
+              ),
+            bodyHandle
+          )) ?? false
+
+        await bodyHandle?.dispose()
 
         if (reportErrorTextExists) {
           throw new Error('Report generation failed: insufficient permissions.')
         }
+
+        /*
+         * Print to PDF
+         */
 
         debug(`Finding the print button for "${exportType}"...`)
 
