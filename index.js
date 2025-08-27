@@ -255,6 +255,10 @@ export class FasterReportExporter {
                 await page.waitForNetworkIdle({
                     timeout: this.#timeoutMillis
                 });
+                const reportErrorTextExists = await page.evaluate(() => document.body.textContent.includes('You do not have permissions to access the reports.'));
+                if (reportErrorTextExists) {
+                    throw new Error('Report generation failed: insufficient permissions.');
+                }
                 debug(`Finding the print button for "${exportType}"...`);
                 const printOptionsMenuElement = await page.waitForSelector('#RvDetails_ctl05_ctl04_ctl00_ButtonLink', { timeout: this.#timeoutMillis });
                 if (printOptionsMenuElement === null) {
