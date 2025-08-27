@@ -52,7 +52,7 @@ export class FasterReportExporter {
 
   #timeoutMillis = secondsToMillis(
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    Math.max(300, minimumRecommendedTimeoutSeconds)
+    Math.max(120, minimumRecommendedTimeoutSeconds)
   )
 
   #timeZone: ReportTimeZone = 'Eastern'
