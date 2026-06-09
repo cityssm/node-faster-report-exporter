@@ -1,4 +1,3 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
 /* eslint-disable security/detect-non-literal-fs-filename */
 
 import assert from 'node:assert'
@@ -14,7 +13,7 @@ import { FasterReportExporter } from '../index.js'
 import {
   fasterPassword,
   fasterTenant,
-  fasterUserName,
+  fasterUsername,
   partOrderNumber,
   timeZone,
   workOrderNumber
@@ -31,7 +30,7 @@ await describe('node-faster-report-exporter', async () => {
 
   const reportExporter = new FasterReportExporter(
     fasterTenant,
-    fasterUserName,
+    fasterUsername,
     fasterPassword,
     {
       timeoutMillis: 90_000,
@@ -152,7 +151,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it.skip('Exports the message logger', async () => {
+  await it('Exports the message logger', async () => {
     try {
       const reportPath = await reportExporter.exportMessageLogger(
         new Date(2025, 1 - 1, 1),

@@ -1,4 +1,3 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
 /* eslint-disable max-lines */
 
 import fs from 'node:fs'
@@ -43,12 +42,10 @@ export interface FasterReportExporterOptions {
 export class FasterReportExporter {
   readonly fasterUrlBuilder: FasterUrlBuilder
 
-  readonly #fasterPassword: string
-  readonly #fasterUserName: string
-
   #downloadFolderPath = os.tmpdir()
+  readonly #fasterPassword: string
 
-  #useHeadlessBrowser = true
+  readonly #fasterUsername: string
 
   #timeoutMillis = secondsToMillis(
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
@@ -57,23 +54,25 @@ export class FasterReportExporter {
 
   #timeZone: ReportTimeZone = 'Eastern'
 
+  #useHeadlessBrowser = true
+
   /**
    * Initializes the FasterReportExporter.
    * @param fasterTenantOrBaseUrl - The subdomain of the FASTER Web URL before ".fasterwebcloud.com"
    *                                or the full domain and path including "/FASTER"
-   * @param fasterUserName - The user name
+   * @param fasterUsername - The user name
    * @param fasterPassword - The password
    * @param options - Options
    */
   constructor(
     fasterTenantOrBaseUrl: string,
-    fasterUserName: string,
+    fasterUsername: string,
     fasterPassword: string,
     options: Partial<FasterReportExporterOptions> = {}
   ) {
     this.fasterUrlBuilder = new FasterUrlBuilder(fasterTenantOrBaseUrl)
 
-    this.#fasterUserName = fasterUserName
+    this.#fasterUsername = fasterUsername
     this.#fasterPassword = fasterPassword
 
     if (options.downloadFolderPath !== undefined) {
@@ -91,51 +90,6 @@ export class FasterReportExporter {
     if (options.timeZone !== undefined) {
       this.#timeZone = options.timeZone
     }
-  }
-
-  /**
-   * Sets the folder where downloaded reports are saved.
-   * @param downloadFolderPath - The folder where downloaded reports are saved.
-   */
-  setDownloadFolderPath(downloadFolderPath: string): void {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    if (!fs.existsSync(downloadFolderPath)) {
-      throw new Error(
-        `Download folder path does not exist: ${downloadFolderPath}`
-      )
-    }
-
-    this.#downloadFolderPath = downloadFolderPath
-  }
-
-  /**
-   * Changes the timeout for loading the browser and navigating between pages.
-   * @param timeoutMillis - Number of milliseconds.
-   */
-  setTimeoutMillis(timeoutMillis: number): void {
-    this.#timeoutMillis = timeoutMillis
-
-    if (timeoutMillis < secondsToMillis(minimumRecommendedTimeoutSeconds)) {
-      debug(
-        `Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`
-      )
-    }
-  }
-
-  /**
-   * Switches off headless mode, making the browser window visible.
-   * Useful for debugging.
-   */
-  showBrowserWindow(): void {
-    this.#useHeadlessBrowser = false
-  }
-
-  /**
-   * Changes the time zone parameter used in reports.
-   * @param timezone - The preferred report time zone.
-   */
-  setTimeZone(timezone: ReportTimeZone): void {
-    this.#timeZone = timezone
   }
 
   /**
@@ -182,15 +136,15 @@ export class FasterReportExporter {
       if (loginFormElement !== null) {
         debug('Filling out login form...')
 
-        const userNameElement = await loginFormElement.$(
+        const usernameElement = await loginFormElement.$(
           '#LoginControl_UserName'
         )
 
-        if (userNameElement === null) {
+        if (usernameElement === null) {
           throw new Error('Unable to locate user name field.')
         }
 
-        await userNameElement.type(this.#fasterUserName)
+        await usernameElement.type(this.#fasterUsername)
 
         const passwordElement = await loginFormElement.$(
           '#LoginControl_Password'
@@ -253,48 +207,216 @@ export class FasterReportExporter {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/max-params
-  async #navigateToFasterReportPage(
-    browser: puppeteer.Browser,
-    page: puppeteer.Page,
-    reportKey: `/${string}`,
-    reportParameters: ReportParameters,
-    reportFilters?: Record<string, string>
-  ): Promise<{ browser: puppeteer.Browser; page: puppeteer.Page }> {
-    try {
-      /*
-       * Navigate to report
-       */
+  /**
+   * Export an Asset Master List (W114) report.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportAssetList(exportType?: ReportExportType): Promise<string> {
+    const { browser, page } = await this._getLoggedInFasterPage()
 
-      const reportUrl = new URL(this.fasterUrlBuilder.reportViewerUrl)
-
-      reportUrl.searchParams.set('R', reportKey)
-
-      for (const [parameterKey, parameterValue] of Object.entries(
-        reportParameters
-      )) {
-        reportUrl.searchParams.set(parameterKey, parameterValue)
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      '/Assets/W114 - Asset Master List',
+      {
+        ReportType: 'S',
+        Domain: 'Assets',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Primary Grouping': 'Organization',
+        'Secondary Grouping': 'Department'
       }
+    )
 
-      await page.goto(reportUrl.href, {
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports an Inventory Report (W200).
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportInventory(exportType?: ReportExportType): Promise<string> {
+    const { browser, page } = await this._getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      '/Inventory/W200 - Inventory Report',
+      {
+        ReportType: 'S',
+        Domain: 'Inventory',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Grouping within Storeroom': 'Item Category'
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports the Message Logger (W603) report.
+   * @param startDate - The start date
+   * @param endDate - The end date
+   * @param exportType - The export type
+   * @returns The path to the exported report.
+   */
+  async exportMessageLogger(
+    startDate: Date = new Date(),
+    endDate: Date = new Date(),
+    exportType?: ReportExportType
+  ): Promise<string> {
+    const { browser, page } = await this._getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      '/Setup/W603 - Message Logger',
+      {
+        ReportType: 'S',
+        Domain: 'Setup',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Start Date': dateToString(startDate),
+        'End Date': dateToString(endDate)
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports a Part Order Print (W299) report for a given order number.
+   * @param orderNumber - The order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportPartOrderPrint(
+    orderNumber: number,
+    exportType?: ReportExportType
+  ): Promise<string> {
+    const { browser, page } = await this._getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      '/Part Order Print/W299 - OrderPrint',
+      {
+        OrderID: orderNumber.toString(),
+        ReportType: 'S',
+        Domain: 'Inventory'
+      },
+      {
+        'Time Zone': this.#timeZone
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports a scheduled report by name.
+   * Helpful for exporting reports with complex parameters.
+   * @param scheduleName - Schedule name
+   * @param startDate - The start date
+   * @param endDate - The end date
+   * @param exportType - The export type
+   * @returns The path to the exported report.
+   */
+  async exportScheduledReport(
+    scheduleName: string,
+    startDate: Date = new Date(),
+    endDate: Date = new Date(),
+    exportType?: ReportExportType
+  ): Promise<string> {
+    let { browser, page } = await this._getLoggedInFasterPage()
+
+    try {
+      await page.goto(this.fasterUrlBuilder.scheduledReportsUrl, {
         timeout: this.#timeoutMillis
       })
-
-      await delay()
 
       await page.waitForNetworkIdle({
         timeout: this.#timeoutMillis
       })
 
-      if (reportFilters !== undefined) {
-        await applyReportFilters(page, reportFilters, {
-          timeoutMillis: this.#timeoutMillis
-        })
-      }
+      // Find the report row
 
-      return {
-        browser,
-        page
+      const scheduledReportsTableRowElements = await page.$$(
+        // eslint-disable-next-line no-secrets/no-secrets
+        '#ctl00_ContentPlaceHolder_Content_ScheduleRadDock_C_ScheduleRadGrid_ctl00 tbody tr'
+      )
+
+      for (const scheduledReportsTableRowElement of scheduledReportsTableRowElements) {
+        const reportNameElement = await scheduledReportsTableRowElement.$(
+          'td:nth-child(2) div span'
+        )
+
+        if (reportNameElement === null) {
+          continue
+        }
+
+        const reportNameText = await reportNameElement.evaluate((cell) =>
+          cell.textContent?.trim()
+        )
+
+        if (reportNameText === scheduleName) {
+          debug(`Scheduled report found: ${scheduleName}`)
+
+          const actionLinkElements =
+            await scheduledReportsTableRowElement.$$('td:nth-child(1) a')
+
+          for (const actionLinkElement of actionLinkElements) {
+            const actionLinkText = await actionLinkElement.evaluate(
+              (cell) => cell.textContent
+            )
+
+            if (actionLinkText === 'Parameter') {
+              debug(`Opening report: ${scheduleName}`)
+
+              await actionLinkElement.click()
+
+              await delay()
+
+              await page.waitForNetworkIdle({
+                timeout: this.#timeoutMillis
+              })
+
+              const browserPages = await browser.pages()
+
+              page = browserPages.at(-1) as puppeteer.Page
+
+              await page.bringToFront()
+
+              await delay()
+
+              await page.waitForNetworkIdle({
+                timeout: this.#timeoutMillis
+              })
+
+              await applyReportFilters(
+                page,
+                {
+                  'Start Date': dateToString(startDate),
+                  'End Date': dateToString(endDate)
+                },
+                {
+                  timeoutMillis: this.#timeoutMillis
+                }
+              )
+
+              break
+            }
+          }
+        }
       }
     } catch (error) {
       try {
@@ -303,6 +425,128 @@ export class FasterReportExporter {
 
       throw error
     }
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports the Customer Print (W398) for a given work order.
+   * @param workOrderNumber - The work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportWorkOrderCustomerPrint(
+    workOrderNumber: number,
+    exportType: ReportExportType = 'PDF'
+  ): Promise<string> {
+    return await this.#exportWorkOrderPrint(
+      workOrderNumber,
+      exportType,
+      // eslint-disable-next-line no-secrets/no-secrets
+      '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_CustomerPrintLinkButton'
+    )
+  }
+
+  /**
+   * Export a Work Order Details by Work Order Number (W300N) report.
+   * @param minWorkOrderNumber - Minimum work order number.
+   * @param maxWorkOrderNumber - Maximum work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportWorkOrderDetails(
+    minWorkOrderNumber: number,
+    maxWorkOrderNumber?: number,
+    exportType?: ReportExportType
+  ): Promise<string> {
+    const minWorkOrderNumberString = minWorkOrderNumber.toString()
+    const maxWorkOrderNumberString = (
+      maxWorkOrderNumber ?? minWorkOrderNumber
+    ).toString()
+
+    const { browser, page } = await this._getLoggedInFasterPage()
+
+    await this.#navigateToFasterReportPage(
+      browser,
+      page,
+      // eslint-disable-next-line no-secrets/no-secrets
+      '/Maintenance/W300n - WorkOrderDetailsByWONumber',
+      {
+        ReportType: 'S',
+        Domain: 'Maintenance',
+        Parent: 'Reports'
+      },
+      {
+        'Time Zone': this.#timeZone,
+        'Beginning Work Order Number': minWorkOrderNumberString,
+        'Ending Work Order Number': maxWorkOrderNumberString
+      }
+    )
+
+    return await this.#exportFasterReport(browser, page, exportType)
+  }
+
+  /**
+   * Exports the Technician Print (W399) for a given work order.
+   * @param workOrderNumber - The work order number.
+   * @param exportType - The export type.
+   * @returns The path to the exported report.
+   */
+  async exportWorkOrderTechnicianPrint(
+    workOrderNumber: number,
+    exportType: ReportExportType = 'PDF'
+  ): Promise<string> {
+    return await this.#exportWorkOrderPrint(
+      workOrderNumber,
+      exportType,
+      // eslint-disable-next-line no-secrets/no-secrets
+      '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_WorkOrderPrintLinkButton'
+    )
+  }
+
+  /**
+   * Sets the folder where downloaded reports are saved.
+   * @param downloadFolderPath - The folder where downloaded reports are saved.
+   */
+  setDownloadFolderPath(downloadFolderPath: string): void {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    if (!fs.existsSync(downloadFolderPath)) {
+      throw new Error(
+        `Download folder path does not exist: ${downloadFolderPath}`
+      )
+    }
+
+    this.#downloadFolderPath = downloadFolderPath
+  }
+
+  /**
+   * Changes the timeout for loading the browser and navigating between pages.
+   * @param timeoutMillis - Number of milliseconds.
+   */
+  setTimeoutMillis(timeoutMillis: number): void {
+    this.#timeoutMillis = timeoutMillis
+
+    if (timeoutMillis < secondsToMillis(minimumRecommendedTimeoutSeconds)) {
+      debug(
+        `Warning: Timeouts less than ${minimumRecommendedTimeoutSeconds}s are not recommended.`
+      )
+    }
+  }
+
+  /**
+   * Changes the time zone parameter used in reports.
+   * @param timezone - The preferred report time zone.
+   */
+  setTimeZone(timezone: ReportTimeZone): void {
+    this.#timeZone = timezone
+  }
+
+  /**
+   * Switches off headless mode, making the browser window visible.
+   * Useful for debugging.
+   */
+  showBrowserWindow(): void {
+    this.#useHeadlessBrowser = false
   }
 
   /**
@@ -454,7 +698,7 @@ export class FasterReportExporter {
         // eslint-disable-next-line no-unmodified-loop-condition, @typescript-eslint/no-unnecessary-condition
         while (downloadStarted && retries > 0) {
           await delay()
-          retries--
+          retries -= 1
         }
       } finally {
         try {
@@ -462,127 +706,6 @@ export class FasterReportExporter {
         } catch {}
       }
     })
-  }
-
-  /**
-   * Exports a Part Order Print (W299) report for a given order number.
-   * @param orderNumber - The order number.
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportPartOrderPrint(
-    orderNumber: number,
-    exportType?: ReportExportType
-  ): Promise<string> {
-    const { browser, page } = await this._getLoggedInFasterPage()
-
-    await this.#navigateToFasterReportPage(
-      browser,
-      page,
-      '/Part Order Print/W299 - OrderPrint',
-      {
-        OrderID: orderNumber.toString(),
-        ReportType: 'S',
-        Domain: 'Inventory'
-      },
-      {
-        'Time Zone': this.#timeZone
-      }
-    )
-
-    return await this.#exportFasterReport(browser, page, exportType)
-  }
-
-  /**
-   * Exports an Inventory Report (W200).
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportInventory(exportType?: ReportExportType): Promise<string> {
-    const { browser, page } = await this._getLoggedInFasterPage()
-
-    await this.#navigateToFasterReportPage(
-      browser,
-      page,
-      '/Inventory/W200 - Inventory Report',
-      {
-        ReportType: 'S',
-        Domain: 'Inventory',
-        Parent: 'Reports'
-      },
-      {
-        'Time Zone': this.#timeZone,
-        'Grouping within Storeroom': 'Item Category'
-      }
-    )
-
-    return await this.#exportFasterReport(browser, page, exportType)
-  }
-
-  /**
-   * Export an Asset Master List (W114) report.
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportAssetList(exportType?: ReportExportType): Promise<string> {
-    const { browser, page } = await this._getLoggedInFasterPage()
-
-    await this.#navigateToFasterReportPage(
-      browser,
-      page,
-      '/Assets/W114 - Asset Master List',
-      {
-        ReportType: 'S',
-        Domain: 'Assets',
-        Parent: 'Reports'
-      },
-      {
-        'Time Zone': this.#timeZone,
-        'Primary Grouping': 'Organization',
-        'Secondary Grouping': 'Department'
-      }
-    )
-
-    return await this.#exportFasterReport(browser, page, exportType)
-  }
-
-  /**
-   * Export a Work Order Details by Work Order Number (W300N) report.
-   * @param minWorkOrderNumber - Minimum work order number.
-   * @param maxWorkOrderNumber - Maximum work order number.
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportWorkOrderDetails(
-    minWorkOrderNumber: number,
-    maxWorkOrderNumber?: number,
-    exportType?: ReportExportType
-  ): Promise<string> {
-    const minWorkOrderNumberString = minWorkOrderNumber.toString()
-    const maxWorkOrderNumberString = (
-      maxWorkOrderNumber ?? minWorkOrderNumber
-    ).toString()
-
-    const { browser, page } = await this._getLoggedInFasterPage()
-
-    await this.#navigateToFasterReportPage(
-      browser,
-      page,
-      // eslint-disable-next-line no-secrets/no-secrets
-      '/Maintenance/W300n - WorkOrderDetailsByWONumber',
-      {
-        ReportType: 'S',
-        Domain: 'Maintenance',
-        Parent: 'Reports'
-      },
-      {
-        'Time Zone': this.#timeZone,
-        'Beginning Work Order Number': minWorkOrderNumberString,
-        'Ending Work Order Number': maxWorkOrderNumberString
-      }
-    )
-
-    return await this.#exportFasterReport(browser, page, exportType)
   }
 
   async #exportWorkOrderPrint(
@@ -643,170 +766,48 @@ export class FasterReportExporter {
     }
   }
 
-  /**
-   * Exports the Customer Print (W398) for a given work order.
-   * @param workOrderNumber - The work order number.
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportWorkOrderCustomerPrint(
-    workOrderNumber: number,
-    exportType: ReportExportType = 'PDF'
-  ): Promise<string> {
-    return await this.#exportWorkOrderPrint(
-      workOrderNumber,
-      exportType,
-      // eslint-disable-next-line no-secrets/no-secrets
-      '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_CustomerPrintLinkButton'
-    )
-  }
-
-  /**
-   * Exports the Technician Print (W399) for a given work order.
-   * @param workOrderNumber - The work order number.
-   * @param exportType - The export type.
-   * @returns The path to the exported report.
-   */
-  async exportWorkOrderTechnicianPrint(
-    workOrderNumber: number,
-    exportType: ReportExportType = 'PDF'
-  ): Promise<string> {
-    return await this.#exportWorkOrderPrint(
-      workOrderNumber,
-      exportType,
-      // eslint-disable-next-line no-secrets/no-secrets
-      '#ctl00_ContentPlaceHolder_Content_MasterWorkOrderDetailMenu_WorkOrderPrintLinkButton'
-    )
-  }
-
-  /**
-   * Exports the Message Logger (W603) report.
-   * @param startDate - The start date
-   * @param endDate - The end date
-   * @param exportType - The export type
-   * @returns The path to the exported report.
-   */
-  async exportMessageLogger(
-    startDate: Date = new Date(),
-    endDate: Date = new Date(),
-    exportType?: ReportExportType
-  ): Promise<string> {
-    const { browser, page } = await this._getLoggedInFasterPage()
-
-    await this.#navigateToFasterReportPage(
-      browser,
-      page,
-      '/Setup/W603 - Message Logger',
-      {
-        ReportType: 'S',
-        Domain: 'Setup',
-        Parent: 'Reports'
-      },
-      {
-        'Time Zone': this.#timeZone,
-        'Start Date': dateToString(startDate),
-        'End Date': dateToString(endDate)
-      }
-    )
-
-    return await this.#exportFasterReport(browser, page, exportType)
-  }
-
-  /**
-   * Exports a scheduled report by name.
-   * Helpful for exporting reports with complex parameters.
-   * @param scheduleName - Schedule name
-   * @param startDate - The start date
-   * @param endDate - The end date
-   * @param exportType - The export type
-   * @returns The path to the exported report.
-   */
-  async exportScheduledReport(
-    scheduleName: string,
-    startDate: Date = new Date(),
-    endDate: Date = new Date(),
-    exportType?: ReportExportType
-  ): Promise<string> {
-    let { browser, page } = await this._getLoggedInFasterPage()
-
+  // eslint-disable-next-line @typescript-eslint/max-params
+  async #navigateToFasterReportPage(
+    browser: puppeteer.Browser,
+    page: puppeteer.Page,
+    reportKey: `/${string}`,
+    reportParameters: ReportParameters,
+    reportFilters?: Record<string, string>
+  ): Promise<{ browser: puppeteer.Browser; page: puppeteer.Page }> {
     try {
-      await page.goto(this.fasterUrlBuilder.scheduledReportsUrl, {
+      /*
+       * Navigate to report
+       */
+
+      const reportUrl = new URL(this.fasterUrlBuilder.reportViewerUrl)
+
+      reportUrl.searchParams.set('R', reportKey)
+
+      for (const [parameterKey, parameterValue] of Object.entries(
+        reportParameters
+      )) {
+        reportUrl.searchParams.set(parameterKey, parameterValue)
+      }
+
+      await page.goto(reportUrl.href, {
         timeout: this.#timeoutMillis
       })
+
+      await delay()
 
       await page.waitForNetworkIdle({
         timeout: this.#timeoutMillis
       })
 
-      // Find the report row
+      if (reportFilters !== undefined) {
+        await applyReportFilters(page, reportFilters, {
+          timeoutMillis: this.#timeoutMillis
+        })
+      }
 
-      const scheduledReportsTableRowElements = await page.$$(
-        // eslint-disable-next-line no-secrets/no-secrets
-        '#ctl00_ContentPlaceHolder_Content_ScheduleRadDock_C_ScheduleRadGrid_ctl00 tbody tr'
-      )
-
-      for (const scheduledReportsTableRowElement of scheduledReportsTableRowElements) {
-        const reportNameElement = await scheduledReportsTableRowElement.$(
-          'td:nth-child(2) div span'
-        )
-
-        if (reportNameElement === null) {
-          continue
-        }
-
-        const reportNameText = await reportNameElement.evaluate((cell) =>
-          cell.textContent?.trim()
-        )
-
-        if (reportNameText === scheduleName) {
-          debug(`Scheduled report found: ${scheduleName}`)
-
-          const actionLinkElements =
-            await scheduledReportsTableRowElement.$$('td:nth-child(1) a')
-
-          for (const actionLinkElement of actionLinkElements) {
-            const actionLinkText = await actionLinkElement.evaluate(
-              (cell) => cell.textContent
-            )
-
-            if (actionLinkText === 'Parameter') {
-              debug(`Opening report: ${scheduleName}`)
-
-              await actionLinkElement.click()
-
-              await delay()
-
-              await page.waitForNetworkIdle({
-                timeout: this.#timeoutMillis
-              })
-
-              const browserPages = await browser.pages()
-
-              page = browserPages.at(-1) as puppeteer.Page
-
-              await page.bringToFront()
-
-              await delay()
-
-              await page.waitForNetworkIdle({
-                timeout: this.#timeoutMillis
-              })
-
-              await applyReportFilters(
-                page,
-                {
-                  'Start Date': dateToString(startDate),
-                  'End Date': dateToString(endDate)
-                },
-                {
-                  timeoutMillis: this.#timeoutMillis
-                }
-              )
-
-              break
-            }
-          }
-        }
+      return {
+        browser,
+        page
       }
     } catch (error) {
       try {
@@ -815,7 +816,5 @@ export class FasterReportExporter {
 
       throw error
     }
-
-    return await this.#exportFasterReport(browser, page, exportType)
   }
 }

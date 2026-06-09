@@ -1,5 +1,5 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+/* eslint-disable no-await-in-loop */
 
 import type { puppeteer } from '@cityssm/puppeteer-launch'
 
@@ -28,6 +28,7 @@ export async function applyReportFilters(
   for (const labelElement of labelElements) {
     const labelText = await labelElement.evaluate((element) => element.textContent, labelElement)
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (labelText === null) {
       continue
     }

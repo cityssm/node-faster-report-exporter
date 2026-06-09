@@ -1,4 +1,3 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
 /* eslint-disable security/detect-non-literal-fs-filename */
 import assert from 'node:assert';
 import fs from 'node:fs';
@@ -7,13 +6,13 @@ import { minutesToMillis } from '@cityssm/to-millis';
 import Debug from 'debug';
 import { DEBUG_ENABLE_NAMESPACES } from '../debug.config.js';
 import { FasterReportExporter } from '../index.js';
-import { fasterPassword, fasterTenant, fasterUserName, partOrderNumber, timeZone, workOrderNumber } from './config.js';
+import { fasterPassword, fasterTenant, fasterUsername, partOrderNumber, timeZone, workOrderNumber } from './config.js';
 const doCleanup = true;
 Debug.enable(DEBUG_ENABLE_NAMESPACES);
 const debug = Debug('faster-report-exporter:test');
 await describe('node-faster-report-exporter', async () => {
     const filesToPurgeOnExit = [];
-    const reportExporter = new FasterReportExporter(fasterTenant, fasterUserName, fasterPassword, {
+    const reportExporter = new FasterReportExporter(fasterTenant, fasterUsername, fasterPassword, {
         timeoutMillis: 90_000,
         showBrowserWindow: true,
         timeZone
@@ -95,7 +94,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports the message logger', async () => {
+    await it('Exports the message logger', async () => {
         try {
             const reportPath = await reportExporter.exportMessageLogger(new Date(2025, 1 - 1, 1), new Date(2025, 3 - 1, 1), 'Excel');
             assert.ok(fs.existsSync(reportPath));

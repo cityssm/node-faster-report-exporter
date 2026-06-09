@@ -1,5 +1,5 @@
-// eslint-disable-next-line @eslint-community/eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+/* eslint-disable no-await-in-loop */
 import { delay, longDelayMillis } from './utilities.js';
 /**
  * Populates the report filters on a Report Viewer page.
@@ -14,6 +14,7 @@ export async function applyReportFilters(page, reportFilters, options) {
     const labelTextToInputId = {};
     for (const labelElement of labelElements) {
         const labelText = await labelElement.evaluate((element) => element.textContent, labelElement);
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (labelText === null) {
             continue;
         }
