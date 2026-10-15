@@ -20,7 +20,8 @@ export async function applyReportFilters(page, reportFilters, options) {
         }
         // eslint-disable-next-line security/detect-object-injection
         labelTextToInputId[labelText] =
-            (await labelElement.evaluate((element) => element.getAttribute('for'))) ?? '';
+            (await labelElement.evaluate((element) => element.getAttribute('for'))) ??
+                '';
     }
     for (const [labelSearchText, inputValue] of Object.entries(reportFilters)) {
         let inputId = '';
@@ -56,7 +57,7 @@ export async function applyReportFilters(page, reportFilters, options) {
             });
         }
     }
-    const submitButtonElement = await page.waitForSelector('a:has(input[type="submit"])');
+    const submitButtonElement = await page.waitForSelector('input[type="submit"][value="View Report"]');
     await submitButtonElement?.scrollIntoView();
     await submitButtonElement?.click();
     await delay(longDelayMillis);

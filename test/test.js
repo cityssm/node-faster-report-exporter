@@ -28,7 +28,7 @@ await describe('node-faster-report-exporter', async () => {
             }
         }
     });
-    await it.skip('Exports asset list', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    await it('Exports asset list', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
         try {
             const reportPath = await reportExporter.exportAssetList('PDF');
@@ -40,7 +40,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    await it('Exports inventory', { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
         try {
             const reportPath = await reportExporter.exportInventory('PDF');
@@ -52,7 +52,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports a part order', async () => {
+    await it('Exports a part order', async () => {
         try {
             const reportPath = await reportExporter.exportPartOrderPrint(partOrderNumber, 'Word');
             assert.ok(fs.existsSync(reportPath));
@@ -62,7 +62,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports work order details', { timeout: minutesToMillis(5) }, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    await it('Exports work order details', { timeout: minutesToMillis(5) }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderDetails(1, 10, 'PDF');
@@ -74,7 +74,7 @@ await describe('node-faster-report-exporter', async () => {
             assert.fail();
         }
     });
-    await it.skip('Exports a work order customer print', async () => {
+    await it('Exports a work order customer print', async () => {
         try {
             const reportPath = await reportExporter.exportWorkOrderCustomerPrint(workOrderNumber, 'Excel');
             assert.ok(fs.existsSync(reportPath));

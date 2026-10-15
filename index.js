@@ -89,7 +89,7 @@ export class FasterReportExporter {
                     throw new Error('Unable to locate password field.');
                 }
                 await passwordElement.type(this.#fasterPassword);
-                const submitButtonElement = await loginFormElement.$('#LoginControl_SignInButton_input');
+                const submitButtonElement = await loginFormElement.$('#LoginControl_SignInButton');
                 if (submitButtonElement === null) {
                     throw new Error('Unable to locate Sign In button.');
                 }

@@ -40,15 +40,20 @@
   "dependencies": {
     "@cityssm/faster-constants": "^0.3.1",
     "@cityssm/faster-url-builder": "^1.1.0",
-    "@cityssm/puppeteer-launch": "^7.0.1",
+    "@cityssm/puppeteer-launch": "^8.0.0",
     "@cityssm/to-millis": "^1.0.1",
-    "@cityssm/utils-datetime": "^1.3.0",
+    "@cityssm/utils-datetime": "^1.4.1",
     "debug": "^4.4.3"
   },
   "devDependencies": {
     "@types/debug": "^4.1.13",
-    "@types/node": "^25.9.2",
-    "eslint-config-cityssm": "^41.0.0",
-    "prettier-config-cityssm": "^2.1.2"
+    "@types/node": "^26.6.5",
+    "eslint-config-cityssm": "^58.0.0",
+    "prettier-config-cityssm": "^2.2.0"
+  },
+  "allowScripts": {
+    "puppeteer@25.14.0": true,
+    "registry-js@1.16.1": true,
+    "win-version-info@6.0.1": true
   }
 }

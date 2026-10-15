@@ -23,7 +23,7 @@ import { FasterReportExporter } from '@cityssm/faster-report-exporter'
 
 const reportExporter = new FasterReportExporter(
   fasterTenant,
-  fasterUserName,
+  fasterUsername,
   fasterPassword
 )
 
@@ -73,7 +73,7 @@ const scheduledReport = await reportExporter.exportScheduledReport(
 
 This package uses the [debug](https://www.npmjs.com/package/debug) package
 for debugging output.
-For convenience, the debug namespace used by this pacakge,
+For convenience, the debug namespace used by this package,
 and full namespace enable string are exported.
 
 Debug output can be enabled programmatically, as shown in the example below.
@@ -86,7 +86,7 @@ Debug.enable(DEBUG_ENABLE_NAMESPACES)
 ```
 
 Debugging output can also be enabled using environment variables,
-decribed in the debug package documentation.
+described in the debug package documentation.
 
 ## More Code for FASTER Web
 

@@ -26,7 +26,10 @@ export async function applyReportFilters(
   const labelTextToInputId: Record<string, string> = {}
 
   for (const labelElement of labelElements) {
-    const labelText = await labelElement.evaluate((element) => element.textContent, labelElement)
+    const labelText = await labelElement.evaluate(
+      (element) => element.textContent,
+      labelElement
+    )
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (labelText === null) {
@@ -35,7 +38,8 @@ export async function applyReportFilters(
 
     // eslint-disable-next-line security/detect-object-injection
     labelTextToInputId[labelText] =
-      (await labelElement.evaluate((element) => element.getAttribute('for'))) ?? ''
+      (await labelElement.evaluate((element) => element.getAttribute('for'))) ??
+      ''
   }
 
   for (const [labelSearchText, inputValue] of Object.entries(reportFilters)) {
@@ -74,7 +78,6 @@ export async function applyReportFilters(
       ;(element as HTMLInputElement).blur()
     })
 
-     
     if (Object.keys(reportFilters).length > 1) {
       await delay(longDelayMillis)
 
@@ -85,7 +88,7 @@ export async function applyReportFilters(
   }
 
   const submitButtonElement = await page.waitForSelector(
-    'a:has(input[type="submit"])'
+    'input[type="submit"][value="View Report"]'
   )
 
   await submitButtonElement?.scrollIntoView()

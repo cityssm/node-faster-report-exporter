@@ -51,7 +51,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it.skip(
+  await it(
     'Exports asset list',
     { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
@@ -68,7 +68,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
-  await it.skip(
+  await it(
     'Exports inventory',
     { timeout: 5 * 60 * 60 * 1000 }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
@@ -85,7 +85,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
-  await it.skip('Exports a part order', async () => {
+  await it('Exports a part order', async () => {
     try {
       const reportPath = await reportExporter.exportPartOrderPrint(
         partOrderNumber,
@@ -100,7 +100,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   })
 
-  await it.skip(
+  await it(
     'Exports work order details',
     { timeout: minutesToMillis(5) }, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async () => {
@@ -121,7 +121,7 @@ await describe('node-faster-report-exporter', async () => {
     }
   )
 
-  await it.skip('Exports a work order customer print', async () => {
+  await it('Exports a work order customer print', async () => {
     try {
       const reportPath = await reportExporter.exportWorkOrderCustomerPrint(
         workOrderNumber,

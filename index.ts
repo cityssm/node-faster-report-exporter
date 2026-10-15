@@ -157,7 +157,7 @@ export class FasterReportExporter {
         await passwordElement.type(this.#fasterPassword)
 
         const submitButtonElement = await loginFormElement.$(
-          '#LoginControl_SignInButton_input'
+          '#LoginControl_SignInButton'
         )
 
         if (submitButtonElement === null) {
